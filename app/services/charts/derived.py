@@ -1,4 +1,4 @@
-"""Virtual/derived columns synthesised from stored columns at aggregation time.
+﻿"""Virtual/derived columns synthesised from stored columns at aggregation time.
 
 Keeps the CSV schema stable (no new columns written) while letting the chart
 registry reference logical fields like `type` and `category` derived from

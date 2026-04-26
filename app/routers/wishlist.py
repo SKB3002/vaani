@@ -1,4 +1,4 @@
-"""Wishlist CRUD — manual + AI-flagged items with target + saved-so-far.
+﻿"""Wishlist CRUD — manual + AI-flagged items with target + saved-so-far.
 
 Key behaviours (§4.4):
 - Create with `source="manual"`, `saved_so_far=0`, `status="active"`, ULID id.

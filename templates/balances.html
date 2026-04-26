@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% from "partials/empty_state.html" import empty_state %}
 {% set active_page = "balances" %}
-{% block title %}Balances · FinEye{% endblock %}
+{% block title %}Balances · Vaani{% endblock %}
 {% block content %}
 <section class="page-head">
   <div>
@@ -137,16 +137,16 @@
     };
 
     try {
-      const res = await window.FinEye.api("/api/balances", { method: "POST", body: payload });
+      const res = await window.Vaani.api("/api/balances", { method: "POST", body: payload });
       const label = mode === "add" ? "Added to balance" : "Balance saved";
-      window.FinEye.toast({
+      window.Vaani.toast({
         type: "success",
         title: label,
         message: `Cash ₹${res.cash_balance.toLocaleString("en-IN")} · Online ₹${res.online_balance.toLocaleString("en-IN")}`,
       });
       setTimeout(() => window.location.reload(), 700);
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
     }
   });
 })();

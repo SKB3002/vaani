@@ -1,7 +1,7 @@
-/* Goals A/B interactive view — cards w/ progress bars, add/contribute modals. */
+﻿/* Goals A/B interactive view — cards w/ progress bars, add/contribute modals. */
 (function () {
   "use strict";
-  const { api, toast } = window.FinEye;
+  const { api, toast } = window.Vaani;
 
   const mode = document.body.dataset.goalsMode || detectMode();
 

@@ -1,4 +1,4 @@
-"""Google Sheets backup (M6) — local CSV stays source of truth, Sheets is a mirror."""
+﻿"""Google Sheets backup (M6) — local CSV stays source of truth, Sheets is a mirror."""
 from __future__ import annotations
 
 from app.services.sheets.client import SheetsClient, SheetsClientError

@@ -1,4 +1,4 @@
-"""Chart registry: loads + validates `charts.yaml`.
+﻿"""Chart registry: loads + validates `charts.yaml`.
 
 A ChartSpec is a pure config object. Validation rules:
 - `id` must be unique and URL-safe.

@@ -1,4 +1,4 @@
-"""BalanceService: append-only balance snapshots + ATM transfer + adjustments."""
+﻿"""BalanceService: append-only balance snapshots + ATM transfer + adjustments."""
 from __future__ import annotations
 
 import logging

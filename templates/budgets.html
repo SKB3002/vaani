@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% from "partials/empty_state.html" import empty_state %}
 {% set active_page = "budgets" %}
-{% block title %}Budget rules · FinEye{% endblock %}
+{% block title %}Budget rules · Vaani{% endblock %}
 {% block content %}
 <section class="page-head">
   <div>
@@ -75,10 +75,10 @@
     const payload = {};
     new FormData(form).forEach((v, k) => payload[k] = Number(v));
     try {
-      await window.FinEye.api("/api/budgets/caps", { method: "PUT", body: payload });
-      window.FinEye.toast({ type: "success", message: "Caps updated" });
+      await window.Vaani.api("/api/budgets/caps", { method: "PUT", body: payload });
+      window.Vaani.toast({ type: "success", message: "Caps updated" });
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
     }
   });
 })();

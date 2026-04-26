@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — voice.js
+﻿/* =====================================================================
+   Vaani — voice.js
    Push-to-talk → parse → editable review panel → confirm → save.
    ===================================================================== */
 (function () {
@@ -124,7 +124,7 @@
           </svg>
           <div>
             <div class="voice-review-atm__label">ATM Withdrawal</div>
-            <div class="voice-review-atm__amount">${window.FinEye.fmtINR(parseResult.atm_amount)}</div>
+            <div class="voice-review-atm__amount">${window.Vaani.fmtINR(parseResult.atm_amount)}</div>
           </div>
         </div>`;
     } else {
@@ -247,7 +247,7 @@
         });
 
         if (!valid) {
-          window.FinEye.toast({ type: "danger", message: "Fill in all fields before saving." });
+          window.Vaani.toast({ type: "danger", message: "Fill in all fields before saving." });
           return;
         }
         confirmPayload = {
@@ -262,7 +262,7 @@
       saveBtn.textContent = "Saving…";
 
       try {
-        const res = await window.FinEye.api("/api/expense/confirm", {
+        const res = await window.Vaani.api("/api/expense/confirm", {
           method: "POST",
           body: confirmPayload,
         });
@@ -270,26 +270,26 @@
 
         if (res.status === "atm_transfer") {
           const b = res.balances || {};
-          window.FinEye.toast({
+          window.Vaani.toast({
             type: "success",
             title: "ATM withdrawal recorded",
-            message: `Cash ${window.FinEye.fmtINR(b.cash_balance)} · Online ${window.FinEye.fmtINR(b.online_balance)}`,
+            message: `Cash ${window.Vaani.fmtINR(b.cash_balance)} · Online ${window.Vaani.fmtINR(b.online_balance)}`,
           });
           document.dispatchEvent(new CustomEvent("fineye:balance-changed", { detail: b }));
         } else {
           const rows = res.rows || [];
           if (rows.length === 1) {
-            window.FinEye.toast({
+            window.Vaani.toast({
               type: "success",
               title: "Expense saved",
-              message: `${window.FinEye.fmtINR(rows[0].amount)} · ${rows[0].expense_name}`,
+              message: `${window.Vaani.fmtINR(rows[0].amount)} · ${rows[0].expense_name}`,
             });
           } else {
             const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
-            window.FinEye.toast({
+            window.Vaani.toast({
               type: "success",
               title: `${rows.length} expenses saved`,
-              message: `Total ${window.FinEye.fmtINR(total)}`,
+              message: `Total ${window.Vaani.fmtINR(total)}`,
             });
           }
           rows.forEach((r) => document.dispatchEvent(new CustomEvent("fineye:expense-added", { detail: r })));
@@ -297,7 +297,7 @@
       } catch (err) {
         saveBtn.disabled = false;
         saveBtn.textContent = "Save";
-        window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
       }
     });
   }
@@ -307,18 +307,18 @@
   async function submitTranscript(transcript) {
     if (!transcript || !transcript.trim()) return;
     try {
-      const res = await window.FinEye.api("/api/expense/parse", {
+      const res = await window.Vaani.api("/api/expense/parse", {
         method: "POST",
         body: { transcript },
       });
       handleParseResult(res, transcript);
     } catch (err) {
       if (err.status === 422) {
-        window.FinEye.toast({ type: "danger", title: "Could not parse", message: "Please try again." });
+        window.Vaani.toast({ type: "danger", title: "Could not parse", message: "Please try again." });
       } else if (err.status === 503) {
-        window.FinEye.toast({ type: "danger", title: "Voice service unavailable", message: "Set GROQ_API_KEY." });
+        window.Vaani.toast({ type: "danger", title: "Voice service unavailable", message: "Set GROQ_API_KEY." });
       } else {
-        window.FinEye.toast({ type: "danger", title: "Voice error", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Voice error", message: err.message });
       }
     }
   }
@@ -367,7 +367,7 @@
           setTranscript((finalText + " " + interim).trim());
         };
         rec.onerror = (e) => {
-          window.FinEye.toast({ type: "danger", title: "Mic error", message: e.error || "unknown" });
+          window.Vaani.toast({ type: "danger", title: "Mic error", message: e.error || "unknown" });
           stop();
         };
         rec.onend = () => {
@@ -379,7 +379,7 @@
         };
         rec.start();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Voice error", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Voice error", message: err.message });
         setState(btn, "idle");
         active = false;
       }

@@ -1,4 +1,4 @@
-"""Universal per-table column management (§4.3 generalised).
+﻿"""Universal per-table column management (§4.3 generalised).
 
 Every importable table supports user-defined columns. The registry lives at
 ``data/meta/user_columns/{table}.json``. CSV columns are forward-only (NaN for

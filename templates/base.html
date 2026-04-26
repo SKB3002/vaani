@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="FinEye — personal finance tracker with voice capture, budget overflow engine, and Indian-rupee-aware spreadsheet ledger.">
-  <title>{% block title %}FinEye — Personal Finance{% endblock %}</title>
+  <meta name="description" content="Vaani — Voice-driven finance tracker with AI categorization, budgets, goals, and Supabase sync.">
+  <title>{% block title %}Vaani{% endblock %}</title>
 
   <!-- Fonts — Fraunces (serif display) + Inter Tight (sans UI) + JetBrains Mono (numbers) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
           text: s.getPropertyValue("--chart-text").trim(),
         };
       }
-      window.FINEYE_CHART_COLORS = readChartColors();
+      window.VAANI_CHART_COLORS = readChartColors();
       document.addEventListener("fineye:themechange", () => {
-        window.FINEYE_CHART_COLORS = readChartColors();
-        document.dispatchEvent(new CustomEvent("fineye:chartcolors", { detail: window.FINEYE_CHART_COLORS }));
+        window.VAANI_CHART_COLORS = readChartColors();
+        document.dispatchEvent(new CustomEvent("fineye:chartcolors", { detail: window.Vaani_CHART_COLORS }));
       });
     })();
   </script>
@@ -58,7 +58,7 @@
     <header class="topbar" role="banner">
       <a href="/" class="topbar__logo" style="border-bottom:none;">
         <span class="topbar__logo-dot" aria-hidden="true"></span>
-        <span>FinEye</span>
+        <span>Vaani</span>
       </a>
 
       <div class="topbar__actions">

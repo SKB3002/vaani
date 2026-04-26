@@ -1,4 +1,4 @@
-"""Filter sanitiser — validates user-supplied pandas `DataFrame.query` strings via AST walk.
+﻿"""Filter sanitiser — validates user-supplied pandas `DataFrame.query` strings via AST walk.
 
 Only a tiny subset is allowed:
 - BoolOp: `and`, `or`

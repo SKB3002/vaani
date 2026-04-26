@@ -1,15 +1,15 @@
-[build-system]
+﻿[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fineye"
+name = "vaani"
 version = "0.1.0"
-description = "Personal finance tracker with voice-driven expense capture, pandas/CSV ledger, and AI categorization."
+description = "Vaani — voice-driven finance tracker with AI categorization, Supabase sync, and budget engine."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "FinEye" }]
+authors = [{ name = "vaani" }]
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",

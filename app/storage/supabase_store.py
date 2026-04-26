@@ -1,4 +1,4 @@
-"""Supabase/Postgres dual-write observer for LedgerWriter.
+﻿"""Supabase/Postgres dual-write observer for LedgerWriter.
 
 Receives ChangeEvent dicts from LedgerWriter._notify and upserts/deletes
 rows in the corresponding Postgres table.  Failures are logged but never
@@ -22,7 +22,7 @@ import psycopg2
 
 from app.config import get_settings
 
-log = logging.getLogger("fineye.supabase")
+log = logging.getLogger("vaani.supabase")
 
 # Postgres conflict columns per table (the ON CONFLICT (...) target)
 _CONFLICT_COLS: dict[str, list[str]] = {

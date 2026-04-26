@@ -1,4 +1,4 @@
-"""Expense-related pydantic models."""
+﻿"""Expense-related pydantic models."""
 from __future__ import annotations
 
 from datetime import date as date_t  # noqa: N813 — aliased because field name shadows type

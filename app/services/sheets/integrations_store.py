@@ -1,4 +1,4 @@
-"""Runtime integrations config (`data/meta/integrations.json`).
+﻿"""Runtime integrations config (`data/meta/integrations.json`).
 
 Authoritative at runtime for the Sheets setup UI. `.env` / settings remain
 first-boot defaults; any UI-driven edit goes here and overrides the env.
@@ -21,7 +21,7 @@ from typing import Any
 
 from app.config import Settings
 
-logger = logging.getLogger("fineye.sheets.integrations")
+logger = logging.getLogger("vaani.sheets.integrations")
 
 _FILE_LOCK = threading.Lock()
 

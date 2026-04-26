@@ -1,4 +1,4 @@
-"""Sheets backup lifecycle: install / reload (hot) / teardown.
+﻿"""Sheets backup lifecycle: install / reload (hot) / teardown.
 
 Keeps all Sheets-specific wiring out of `app.main` and makes the integration
 reloadable at runtime when the UI flips config via `PATCH /api/sheets/config`.
@@ -29,7 +29,7 @@ from app.services.sheets.integrations_store import (
 )
 from app.services.sheets.sync_worker import SyncQueue, register_sheets_observer
 
-logger = logging.getLogger("fineye.sheets.lifecycle")
+logger = logging.getLogger("vaani.sheets.lifecycle")
 
 
 def _state(app: FastAPI) -> dict[str, Any]:

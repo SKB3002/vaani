@@ -1,4 +1,4 @@
-"""Import presets — built-in column mappings for known spreadsheet layouts.
+﻿"""Import presets — built-in column mappings for known spreadsheet layouts.
 
 Presets are loaded from ``data/meta/import_presets.json``. The first preset the
 app ships with is ``personal_ledger_v1`` — matches the user's own Excel layout

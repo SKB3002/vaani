@@ -1,4 +1,4 @@
-"""Import committer — dedup via sha1, batch audit, rollback support.
+﻿"""Import committer — dedup via sha1, batch audit, rollback support.
 
 Also hosts the preset pre-processor: when a caller passes ``row_filters`` /
 synthetic mapping targets (``__payment_dual``, ``__tags_combined``,

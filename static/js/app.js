@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — app.js
+﻿/* =====================================================================
+   Vaani — app.js
    Theme toggle, toast dispatcher, fetch helper, Indian currency format.
    Loaded on every page via base.html.
    ===================================================================== */
@@ -23,8 +23,8 @@
   const saved = localStorage.getItem(STORAGE_THEME);
   if (saved) applyTheme(saved);
 
-  window.FinEye = window.FinEye || {};
-  window.FinEye.toggleTheme = function () {
+  window.Vaani = window.Vaani || {};
+  window.Vaani.toggleTheme = function () {
     const current = root.getAttribute("data-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     let next;
@@ -36,7 +36,7 @@
     document.dispatchEvent(new CustomEvent("fineye:themechange", { detail: { theme: next } }));
   };
 
-  window.FinEye.setTheme = function (theme) {
+  window.Vaani.setTheme = function (theme) {
     applyTheme(theme);
     if (theme === "auto") localStorage.removeItem(STORAGE_THEME);
     else localStorage.setItem(STORAGE_THEME, theme);
@@ -46,7 +46,7 @@
   // ------------------------------------------------------------------
   //  Toast dispatcher
   // ------------------------------------------------------------------
-  window.FinEye.toast = function (opts) {
+  window.Vaani.toast = function (opts) {
     const { title = "", message = "", type = "info", duration = 3600 } = opts || {};
     const stack = document.querySelector(".toast-stack");
     if (!stack) return;
@@ -72,7 +72,7 @@
   // ------------------------------------------------------------------
   //  Fetch wrapper (localhost-only, no CSRF needed)
   // ------------------------------------------------------------------
-  window.FinEye.api = async function (path, options) {
+  window.Vaani.api = async function (path, options) {
     options = options || {};
     const init = {
       method: options.method || "GET",
@@ -124,7 +124,7 @@
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-  window.FinEye.fmtINR = function (n, opts) {
+  window.Vaani.fmtINR = function (n, opts) {
     if (n === null || n === undefined || Number.isNaN(n)) return "—";
     const f = (opts && opts.short) ? inrFormatterShort : inrFormatter;
     return f.format(Number(n));
@@ -135,7 +135,7 @@
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  window.FinEye.fmtNum = function (n) {
+  window.Vaani.fmtNum = function (n) {
     if (n === null || n === undefined || Number.isNaN(n)) return "—";
     return inFormatter.format(Number(n));
   };
@@ -145,7 +145,7 @@
   // ------------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.querySelector("[data-action='toggle-theme']");
-    if (toggle) toggle.addEventListener("click", () => window.FinEye.toggleTheme());
+    if (toggle) toggle.addEventListener("click", () => window.Vaani.toggleTheme());
 
     // Voice button wiring lives in /static/js/voice.js (loaded by the partial).
   });

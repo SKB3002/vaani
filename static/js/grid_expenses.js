@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — grid_expenses.js
+﻿/* =====================================================================
+   Vaani — grid_expenses.js
    Handsontable grid for /expenses. Chip dropdown editors, inline add,
    POST/PATCH to /api/expenses.
 
@@ -65,7 +65,7 @@
       td.style.color = "var(--text-3)";
       return td;
     }
-    td.textContent = window.FinEye.fmtNum(Number(value));
+    td.textContent = window.Vaani.fmtNum(Number(value));
     td.style.color = "";
     return td;
   }
@@ -76,7 +76,7 @@
 
     let rows = [];
     try {
-      const data = await window.FinEye.api("/api/expenses");
+      const data = await window.Vaani.api("/api/expenses");
       rows = Array.isArray(data) ? data : (data.items || []);
     } catch (err) {
       rows = [];
@@ -132,7 +132,7 @@
 
           try {
             if (row.id) {
-              await window.FinEye.api(`/api/expenses/${row.id}`, {
+              await window.Vaani.api(`/api/expenses/${row.id}`, {
                 method: "PATCH",
                 body: { [prop]: newVal },
               });
@@ -149,18 +149,18 @@
               };
               if (row.person_name) payload.person_name = row.person_name;
               if (row.notes) payload.notes = row.notes;
-              const created = await window.FinEye.api("/api/expenses", { method: "POST", body: payload });
+              const created = await window.Vaani.api("/api/expenses", { method: "POST", body: payload });
               if (created && created.id) row.id = created.id;
             }
-            window.FinEye.toast({ type: "success", message: "Saved" });
+            window.Vaani.toast({ type: "success", message: "Saved" });
           } catch (err) {
-            window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+            window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
           }
         }
       },
     });
 
-    window.FinEye._expensesGrid = hot;
+    window.Vaani._expensesGrid = hot;
     // Force two renders after paint to shake out any layout race where HOT
     // miscalculates the header clone offset and hides row 0.
     requestAnimationFrame(() => {
@@ -175,7 +175,7 @@
       const row = hot.getSourceDataAtRow(coords.row);
       if (!row || !row.expense_name) return;
       try {
-        await window.FinEye.api("/api/uniques/teach", {
+        await window.Vaani.api("/api/uniques/teach", {
           method: "POST",
           body: {
             surface: row.expense_name,
@@ -183,9 +183,9 @@
             type_category: row.type_category || null,
           },
         });
-        window.FinEye.toast({ type: "success", message: `Taught: ${row.expense_name}` });
+        window.Vaani.toast({ type: "success", message: `Taught: ${row.expense_name}` });
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Teach failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Teach failed", message: err.message });
       }
     });
   }
@@ -193,9 +193,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     init();
     const addBtn = document.querySelector("[data-action='add-expenses-column']");
-    if (addBtn && window.FinEye && typeof window.FinEye.openAddColumnModal === "function") {
+    if (addBtn && window.Vaani && typeof window.Vaani.openAddColumnModal === "function") {
       addBtn.addEventListener("click", () => {
-        window.FinEye.openAddColumnModal({
+        window.Vaani.openAddColumnModal({
           table: "expenses",
           onAdded: () => { if (typeof init === "function") init(); },
         });

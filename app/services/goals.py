@@ -1,4 +1,4 @@
-"""Goals derived-field helpers — pct_complete, months_left, status."""
+﻿"""Goals derived-field helpers — pct_complete, months_left, status."""
 from __future__ import annotations
 
 import math

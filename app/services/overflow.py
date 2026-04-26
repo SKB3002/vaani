@@ -1,4 +1,4 @@
-"""Budget Overflow Engine — pure deterministic function.
+﻿"""Budget Overflow Engine — pure deterministic function.
 
 Implements §7.2 of docs/PLAN-fineye-finance-ai.md. No I/O; callers load CSVs
 and pass dataframes + dicts. See `budget_runner.py` for the orchestrator.

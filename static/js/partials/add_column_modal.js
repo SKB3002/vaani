@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — add_column_modal.js
+﻿/* =====================================================================
+   Vaani — add_column_modal.js
    Reusable "+ Add Column" modal usable from any grid that wants to let
    the user extend a CSV with a new user-defined column.
    ===================================================================== */
@@ -43,15 +43,15 @@
       const defaultVal = defaultEl && defaultEl.value !== "" ? defaultEl.value : null;
       if (!label || !key) return;
       try {
-        await window.FinEye.api(`/api/tables/${table}/columns`, {
+        await window.Vaani.api(`/api/tables/${table}/columns`, {
           method: "POST",
           body: { key, label, dtype, default: defaultVal },
         });
-        window.FinEye.toast({ type: "success", message: `Added column "${label}"` });
+        window.Vaani.toast({ type: "success", message: `Added column "${label}"` });
         close();
         if (typeof onAdded === "function") await onAdded();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Could not add column", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Could not add column", message: err.message });
       }
     });
     const labelEl = form.querySelector("[name='label']");
@@ -63,17 +63,17 @@
     if (!label) return;
     const key = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
     const dtype = window.prompt("dtype (string / number / boolean / date)", "string") || "string";
-    window.FinEye.api(`/api/tables/${table}/columns`, {
+    window.Vaani.api(`/api/tables/${table}/columns`, {
       method: "POST",
       body: { key, label, dtype },
     }).then(() => {
-      window.FinEye.toast({ type: "success", message: `Added column "${label}"` });
+      window.Vaani.toast({ type: "success", message: `Added column "${label}"` });
       if (typeof onAdded === "function") onAdded();
     }).catch(err => {
-      window.FinEye.toast({ type: "danger", title: "Could not add column", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Could not add column", message: err.message });
     });
   }
 
-  window.FinEye = window.FinEye || {};
-  window.FinEye.openAddColumnModal = openAddColumnModal;
+  window.Vaani = window.Vaani || {};
+  window.Vaani.openAddColumnModal = openAddColumnModal;
 })();

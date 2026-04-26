@@ -1,7 +1,7 @@
-/* Budget Table C viewer — month selector, warnings, row coloring. */
+﻿/* Budget Table C viewer — month selector, warnings, row coloring. */
 (function () {
   "use strict";
-  const { api, toast, fmtNum } = window.FinEye;
+  const { api, toast, fmtNum } = window.Vaani;
 
   const monthInput = document.getElementById("bc-month");
   const rowsEl = document.getElementById("bc-rows");

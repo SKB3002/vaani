@@ -1,4 +1,4 @@
-"""Atomic CSV I/O utilities with per-file locking."""
+﻿"""Atomic CSV I/O utilities with per-file locking."""
 from __future__ import annotations
 
 import os

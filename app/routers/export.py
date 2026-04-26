@@ -1,4 +1,4 @@
-"""CSV export — download a single table or a full backup zip.
+﻿"""CSV export — download a single table or a full backup zip.
 
 Users can always `Download CSV` or `Download everything (zip)` regardless of
 whether Google Sheets is configured. This is the always-available backup path.

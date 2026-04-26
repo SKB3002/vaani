@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — grid_investments.js
+﻿/* =====================================================================
+   Vaani — grid_investments.js
    Monthly investments grid. Upsert-by-month semantics against
    /api/investments. Columns are driven by the universal user-column
    registry at /api/tables/investments/columns. Footer row shows per-
@@ -15,7 +15,7 @@
 
   async function loadRegistry() {
     try {
-      const data = await window.FinEye.api("/api/tables/investments/columns");
+      const data = await window.Vaani.api("/api/tables/investments/columns");
       return Array.isArray(data?.columns) ? data.columns : [];
     } catch {
       return [];
@@ -24,7 +24,7 @@
 
   async function loadRows() {
     try {
-      const data = await window.FinEye.api("/api/investments");
+      const data = await window.Vaani.api("/api/investments");
       return Array.isArray(data) ? data : (data.items || []);
     } catch {
       return [];
@@ -38,7 +38,7 @@
       td.style.color = "var(--text-3)";
       return td;
     }
-    td.textContent = window.FinEye.fmtNum(Number(value));
+    td.textContent = window.Vaani.fmtNum(Number(value));
     td.style.color = "";
     return td;
   }
@@ -61,8 +61,8 @@
     const totals = computeColumnTotals(rows, numericKeys);
     const cells = [
       `<div class="kpi-label">Total</div>`,
-      ...numericKeys.map(k => `<div class="mono num">${window.FinEye.fmtNum(totals[k] || 0)}</div>`),
-      `<div class="mono num" style="font-weight: var(--fw-semi);">${window.FinEye.fmtNum(
+      ...numericKeys.map(k => `<div class="mono num">${window.Vaani.fmtNum(totals[k] || 0)}</div>`),
+      `<div class="mono num" style="font-weight: var(--fw-semi);">${window.Vaani.fmtNum(
         Object.values(totals).reduce((a, b) => a + b, 0)
       )}</div>`,
     ];
@@ -105,7 +105,7 @@
     if (!row?.month) return;
     const body = { [prop]: toNumericOrNull(row[prop]) };
     try {
-      await window.FinEye.api(`/api/investments/${row.month}`, {
+      await window.Vaani.api(`/api/investments/${row.month}`, {
         method: "PATCH",
         body,
       });
@@ -118,15 +118,15 @@
           for (const key of columnMeta.map(c => c.key)) {
             if (!EXCLUDED_FROM_TOTAL.has(key)) payload[key] = toNumericOrNull(row[key]);
           }
-          await window.FinEye.api("/api/investments", { method: "POST", body: payload });
+          await window.Vaani.api("/api/investments", { method: "POST", body: payload });
           await refreshTotals();
           return;
         } catch (err2) {
-          window.FinEye.toast({ type: "danger", title: "Save failed", message: err2.message });
+          window.Vaani.toast({ type: "danger", title: "Save failed", message: err2.message });
           return;
         }
       }
-      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
     }
   }
 
@@ -225,19 +225,19 @@
       e.preventDefault();
       const month = form.querySelector("[name='month']").value.trim();
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-        window.FinEye.toast({ type: "danger", message: "Invalid month" });
+        window.Vaani.toast({ type: "danger", message: "Invalid month" });
         return;
       }
       try {
-        await window.FinEye.api("/api/investments", {
+        await window.Vaani.api("/api/investments", {
           method: "POST",
           body: { month },
         });
-        window.FinEye.toast({ type: "success", message: `Added ${month}` });
+        window.Vaani.toast({ type: "success", message: `Added ${month}` });
         close();
         await render();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Could not add month", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Could not add month", message: err.message });
       }
     });
     backdrop.querySelector("[name='month']")?.focus();
@@ -246,9 +246,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     render();
     const addColBtn = document.querySelector("[data-action='add-investment-column']");
-    if (addColBtn && window.FinEye && typeof window.FinEye.openAddColumnModal === "function") {
+    if (addColBtn && window.Vaani && typeof window.Vaani.openAddColumnModal === "function") {
       addColBtn.addEventListener("click", () => {
-        window.FinEye.openAddColumnModal({
+        window.Vaani.openAddColumnModal({
           table: "investments",
           onAdded: () => render(),
         });

@@ -1,4 +1,4 @@
-"""M5 — Rule-driven charts: registry loader + pandas aggregator + safe filter."""
+﻿"""M5 — Rule-driven charts: registry loader + pandas aggregator + safe filter."""
 from __future__ import annotations
 
 from app.services.charts.aggregator import ChartPayload, Dataset, compute_chart

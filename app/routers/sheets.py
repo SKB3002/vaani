@@ -1,4 +1,4 @@
-"""Google Sheets backup endpoints (M6).
+﻿"""Google Sheets backup endpoints (M6).
 
 Safety: every endpoint is a no-op / 503 when GOOGLE_SHEETS_ENABLED is false
 or credentials are missing. Local writes are never blocked.
@@ -38,7 +38,7 @@ from app.services.sheets.sync_worker import (
 from app.storage.schemas import SCHEMAS
 
 router = APIRouter(prefix="/api/sheets", tags=["sheets"])
-logger = logging.getLogger("fineye.sheets.router")
+logger = logging.getLogger("vaani.sheets.router")
 
 # Module-level singletons. Populated by lifecycle.install / set via tests.
 _sync_queue: SyncQueue | None = None

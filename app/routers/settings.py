@@ -1,4 +1,4 @@
-"""Settings endpoints — GET/PATCH meta.json."""
+﻿"""Settings endpoints — GET/PATCH meta.json."""
 from __future__ import annotations
 
 import json

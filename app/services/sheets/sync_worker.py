@@ -1,4 +1,4 @@
-"""Async sync worker for Google Sheets.
+﻿"""Async sync worker for Google Sheets.
 
 Guarantees:
 - Local CSV write never blocks on the queue. `enqueue_*` is sync and fast.
@@ -24,7 +24,7 @@ from app.services.sheets.client import SheetsClient, SheetsClientError
 from app.storage.schemas import SCHEMAS
 from app.storage.user_columns import resolve_columns
 
-logger = logging.getLogger("fineye.sheets.worker")
+logger = logging.getLogger("vaani.sheets.worker")
 
 SYNCABLE_TABLES: set[str] = {
     "expenses",

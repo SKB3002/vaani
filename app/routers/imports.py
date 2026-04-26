@@ -1,4 +1,4 @@
-"""Excel/CSV import router (§4.10b)."""
+﻿"""Excel/CSV import router (§4.10b)."""
 from __future__ import annotations
 
 import hashlib

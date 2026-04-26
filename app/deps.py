@@ -1,4 +1,4 @@
-"""FastAPI dependency providers — process-wide singletons."""
+﻿"""FastAPI dependency providers — process-wide singletons."""
 from __future__ import annotations
 
 from functools import lru_cache

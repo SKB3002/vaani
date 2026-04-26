@@ -1,4 +1,4 @@
-"""System prompt for the Groq expense parser."""
+﻿"""System prompt for the Groq expense parser."""
 from __future__ import annotations
 
 EXPENSE_PARSER_SYSTEM = """\

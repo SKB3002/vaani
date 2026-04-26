@@ -1,4 +1,4 @@
-"""CSV table schemas for FinEye data tables.
+﻿"""CSV table schemas for FinEye data tables.
 
 Single source of truth for column order, dtypes, and primary keys.
 Matches §4 of docs/PLAN-fineye-finance-ai.md.

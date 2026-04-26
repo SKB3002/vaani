@@ -1,4 +1,4 @@
-"""Demo-data lifecycle: status + purge seed rows produced by scripts/seed.py.
+﻿"""Demo-data lifecycle: status + purge seed rows produced by scripts/seed.py.
 
 Seed rows are tagged with `source="demo"` (expenses, balances). Other tables
 don't currently seed any rows but are listed for future-proofing.

@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — import_wizard.js
+﻿/* =====================================================================
+   Vaani — import_wizard.js
    4-step Excel/CSV import wizard. Calls /api/import/*.
    ===================================================================== */
 (function () {
@@ -50,7 +50,7 @@
     const sel = $("#import-preset");
     if (!sel) return;
     try {
-      const data = await window.FinEye.api("/api/import/presets");
+      const data = await window.Vaani.api("/api/import/presets");
       const presets = (data && data.presets) || [];
       presets.forEach(p => {
         const opt = document.createElement("option");
@@ -122,14 +122,14 @@
       renderMapping();
       setStep(2);
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Upload failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Upload failed", message: err.message });
     }
   }
 
   async function fetchSuggestedMapping() {
     state.mapping = {};
     try {
-      const data = await window.FinEye.api(
+      const data = await window.Vaani.api(
         `/api/import/${state.uploadId}/suggest?target_table=${encodeURIComponent(state.target)}`
       );
       const suggestions = (data && data.suggestions) || {};
@@ -222,14 +222,14 @@
       // User-chosen date format overrides preset default (empty string = auto-detect = omit)
       if (state.dateFormat) body.date_format = state.dateFormat;
 
-      const data = await window.FinEye.api(`/api/import/${state.uploadId}/map`, {
+      const data = await window.Vaani.api(`/api/import/${state.uploadId}/map`, {
         method: "POST", body,
       });
       state.dryRun = data;
       renderDryRun();
       setStep(3);
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Validation failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Validation failed", message: err.message });
     }
   }
 
@@ -306,11 +306,11 @@
     e.preventDefault();
     const strategy = e.currentTarget.querySelector("[name='strategy']").value;
     try {
-      const res = await window.FinEye.api(`/api/import/${state.uploadId}/commit`, {
+      const res = await window.Vaani.api(`/api/import/${state.uploadId}/commit`, {
         method: "POST", body: { on_invalid: strategy },
       });
       state.lastCommit = res;
-      window.FinEye.toast({
+      window.Vaani.toast({
         type: "success", title: "Imported",
         message: `${res.inserted || 0} row${res.inserted === 1 ? "" : "s"} added.`,
       });
@@ -319,7 +319,7 @@
       if (summary) summary.textContent = JSON.stringify(res, null, 2);
       renderDemoPrompt(res);
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Import failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Import failed", message: err.message });
     }
   }
 
@@ -346,12 +346,12 @@
     wrap.querySelector("[data-action='demo-keep']").addEventListener("click", () => wrap.remove());
     wrap.querySelector("[data-action='demo-clear']").addEventListener("click", async () => {
       try {
-        const out = await window.FinEye.api("/api/demo-data/purge", { method: "POST", body: {} });
+        const out = await window.Vaani.api("/api/demo-data/purge", { method: "POST", body: {} });
         const total = Object.values(out.removed || {}).reduce((a, b) => a + (b || 0), 0);
-        window.FinEye.toast({ type: "success", title: "Demo data cleared", message: `${total} rows removed.` });
+        window.Vaani.toast({ type: "success", title: "Demo data cleared", message: `${total} rows removed.` });
         wrap.remove();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Purge failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Purge failed", message: err.message });
       }
     });
   }

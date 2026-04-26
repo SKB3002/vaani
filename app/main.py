@@ -1,4 +1,4 @@
-"""FastAPI application factory + lifespan."""
+﻿"""FastAPI application factory + lifespan."""
 from __future__ import annotations
 
 import logging
@@ -43,7 +43,7 @@ logger = logging.getLogger("fineye")
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cfg = get_settings()
     logging.basicConfig(level=cfg.log_level)
-    logger.info("FinEye starting up")
+    logger.info("Vaani starting up")
     bootstrap()
     ledger = get_ledger()
     replayed = ledger.replay()
@@ -87,15 +87,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         await sheets_lifecycle.teardown(app)
         ledger.clear_observers()
-        logger.info("FinEye shutting down")
+        logger.info("Vaani shutting down")
 
 
 def create_app() -> FastAPI:
     cfg = get_settings()
     app = FastAPI(
-        title="FinEye API",
+        title="Vaani API",
         version="0.1.0",
-        description="Personal finance tracker — voice, pandas/CSV ledger, INR-first.",
+        description="Vaani — voice-driven finance tracker with AI categorization and Supabase sync.",
         lifespan=lifespan,
     )
 

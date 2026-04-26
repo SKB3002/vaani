@@ -1,4 +1,4 @@
-"""Row-level value cleaners for imports.
+﻿"""Row-level value cleaners for imports.
 
 - INR currency (strip and commas, including Indian 1,23,456 grouping)
 - Enum coercion (Need/Want/Investment, categories)

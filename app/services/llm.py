@@ -1,4 +1,4 @@
-"""LLM client interface + Stub + real Groq implementation.
+﻿"""LLM client interface + Stub + real Groq implementation.
 
 Groq exposes an OpenAI-compatible Chat Completions API. We keep the Protocol
 + StubLLMClient so tests that want to bypass the network still work, and

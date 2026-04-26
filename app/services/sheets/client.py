@@ -1,4 +1,4 @@
-"""Thin gspread wrapper — only used when GOOGLE_SHEETS_ENABLED.
+﻿"""Thin gspread wrapper — only used when GOOGLE_SHEETS_ENABLED.
 
 Imports gspread lazily so the rest of the app works even when the lib is
 missing or creds are not configured.
@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     import gspread
 
-logger = logging.getLogger("fineye.sheets.client")
+logger = logging.getLogger("vaani.sheets.client")
 
 SHEETS_SCOPES = ("https://www.googleapis.com/auth/spreadsheets",)
 REQUEST_TIMEOUT_S = 15.0

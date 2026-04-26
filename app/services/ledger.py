@@ -1,4 +1,4 @@
-"""LedgerWriter — WAL + atomic CSV writes with per-file locks.
+﻿"""LedgerWriter — WAL + atomic CSV writes with per-file locks.
 
 All mutations to any FinEye CSV go through this class so we get:
 - Crash recovery via WAL replay on startup.
@@ -53,7 +53,7 @@ class LedgerWriter:
             try:
                 cb(event)
             except Exception:  # noqa: BLE001 — observers must never break the write path
-                logging.getLogger("fineye.ledger").exception(
+                logging.getLogger("vaani.ledger").exception(
                     "observer callback failed for %s", event.get("table")
                 )
 

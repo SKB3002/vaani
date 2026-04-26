@@ -1,10 +1,10 @@
-/* =====================================================================
-   FinEye — Handsontable skin
+﻿/* =====================================================================
+   Vaani — Handsontable skin
    Rebuild to match the luxurious aesthetic.
    Dark mode: header bar = surface-2, body = surface-1, gold-hairline borders.
    ===================================================================== */
 
-.fineye-grid-wrap {
+.Vaani-grid-wrap {
   background: var(--surface-1);
   border: 1px solid var(--border-1);
   border-radius: var(--r-4);
@@ -14,16 +14,16 @@
   box-shadow: var(--shadow-1);
 }
 /* Give the first data row clear separation from the header bar */
-.fineye-grid-wrap .handsontable tbody tr:first-child td {
+.Vaani-grid-wrap .handsontable tbody tr:first-child td {
   border-top: 1px solid var(--border-1) !important;
 }
 /* ht_clone_top IS the column headers — must remain visible.
    Ensure it layers above body cells so the sticky bar reads cleanly. */
-.fineye-grid-wrap .handsontable .ht_clone_top,
-.fineye-grid-wrap .handsontable .ht_clone_top_left_corner {
+.Vaani-grid-wrap .handsontable .ht_clone_top,
+.Vaani-grid-wrap .handsontable .ht_clone_top_left_corner {
   z-index: 4;
 }
-:root[data-theme="dark"] .fineye-grid-wrap {
+:root[data-theme="dark"] .Vaani-grid-wrap {
   border-color: var(--gold-hairline);
   box-shadow: var(--shadow-2);
 }

@@ -1,7 +1,7 @@
-/* Budget rules + caps editor. Hydrates the server-rendered page with live edits. */
+﻿/* Budget rules + caps editor. Hydrates the server-rendered page with live edits. */
 (function () {
   "use strict";
-  const { api, toast } = window.FinEye;
+  const { api, toast } = window.Vaani;
 
   async function refreshRules() {
     try {

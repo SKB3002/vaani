@@ -1,4 +1,4 @@
-"""Common enums, regex validators, and shared types."""
+﻿"""Common enums, regex validators, and shared types."""
 from __future__ import annotations
 
 import re

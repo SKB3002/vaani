@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — settings.js
+﻿/* =====================================================================
+   Vaani — settings.js
    Settings page: timezone search, theme, uniques editor (basic).
    ===================================================================== */
 (function () {
@@ -62,25 +62,25 @@
     const envFilled = [...ENV_FIELDS].filter((k) => all[k] && String(all[k]).trim());
 
     try {
-      await window.FinEye.api("/api/settings", { method: "PATCH", body: meta });
+      await window.Vaani.api("/api/settings", { method: "PATCH", body: meta });
       if (envFilled.length) {
-        window.FinEye.toast({
+        window.Vaani.toast({
           type: "info",
           title: "Settings saved",
           message: `Currency/timezone updated. ${envFilled.length} field(s) live in .env — edit the file directly and restart to apply.`,
         });
       } else {
-        window.FinEye.toast({ type: "success", message: "Settings saved" });
+        window.Vaani.toast({ type: "success", message: "Settings saved" });
       }
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
     }
   }
 
   // Theme radio
   function initThemeRadios() {
     document.querySelectorAll("[name='theme']").forEach(r => {
-      r.addEventListener("change", () => window.FinEye.setTheme(r.value));
+      r.addEventListener("change", () => window.Vaani.setTheme(r.value));
     });
     const currentTheme = document.documentElement.getAttribute("data-theme");
     const target = document.querySelector(`[name='theme'][value='${currentTheme || "auto"}']`);
@@ -99,10 +99,10 @@
         const value = form.querySelector("[name='value']").value.trim();
         if (!value) return;
         try {
-          await window.FinEye.api("/api/settings/uniques", {
+          await window.Vaani.api("/api/settings/uniques", {
             method: "POST", body: { field, value },
           });
-          window.FinEye.toast({ type: "success", message: `Added to ${field}` });
+          window.Vaani.toast({ type: "success", message: `Added to ${field}` });
           // Append chip
           const list = form.previousElementSibling;
           if (list) {
@@ -113,7 +113,7 @@
           }
           form.reset();
         } catch (err) {
-          window.FinEye.toast({ type: "danger", title: "Could not save", message: err.message });
+          window.Vaani.toast({ type: "danger", title: "Could not save", message: err.message });
         }
       });
     });

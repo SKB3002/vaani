@@ -1,5 +1,5 @@
-/* =====================================================================
-   FinEye — grid_wishlist.js
+﻿/* =====================================================================
+   Vaani — grid_wishlist.js
    Card-grid UI for /wishlist. CRUD against /api/wishlist.
    ===================================================================== */
 (function () {
@@ -35,8 +35,8 @@
 
   function cardHtml(w) {
     const pct = pctFrom(w);
-    const saved = window.FinEye.fmtNum(Number(w.saved_so_far) || 0);
-    const target = window.FinEye.fmtNum(Number(w.target_amount) || 0);
+    const saved = window.Vaani.fmtNum(Number(w.saved_so_far) || 0);
+    const target = window.Vaani.fmtNum(Number(w.target_amount) || 0);
     const aiBadge = w.source === "ai" ? `<span class="badge badge--info">AI-added</span>` : "";
     const statusBadge = `<span class="badge badge--${w.status === 'achieved' ? 'success' : w.status === 'abandoned' ? 'muted' : 'info'}">${w.status || 'active'}</span>`;
     const linkHtml = w.link
@@ -82,10 +82,10 @@
 
   async function loadAndRender() {
     try {
-      const data = await window.FinEye.api(`/api/wishlist?status=${encodeURIComponent(state.status)}`);
+      const data = await window.Vaani.api(`/api/wishlist?status=${encodeURIComponent(state.status)}`);
       state.items = Array.isArray(data) ? data : (data.items || []);
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Load failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Load failed", message: err.message });
       state.items = [];
     }
     const container = document.getElementById("wishlist-grid");
@@ -113,22 +113,22 @@
 
   async function patchWish(id, body) {
     try {
-      await window.FinEye.api(`/api/wishlist/${id}`, { method: "PATCH", body });
-      window.FinEye.toast({ type: "success", message: "Updated" });
+      await window.Vaani.api(`/api/wishlist/${id}`, { method: "PATCH", body });
+      window.Vaani.toast({ type: "success", message: "Updated" });
       await loadAndRender();
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Update failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Update failed", message: err.message });
     }
   }
 
   async function deleteWish(id) {
     if (!window.confirm("Abandon this wish?")) return;
     try {
-      await window.FinEye.api(`/api/wishlist/${id}`, { method: "DELETE" });
-      window.FinEye.toast({ type: "success", message: "Abandoned" });
+      await window.Vaani.api(`/api/wishlist/${id}`, { method: "DELETE" });
+      window.Vaani.toast({ type: "success", message: "Abandoned" });
       await loadAndRender();
     } catch (err) {
-      window.FinEye.toast({ type: "danger", title: "Delete failed", message: err.message });
+      window.Vaani.toast({ type: "danger", title: "Delete failed", message: err.message });
     }
   }
 
@@ -203,12 +203,12 @@
       };
       if (!payload.item || !(payload.target_amount > 0)) return;
       try {
-        await window.FinEye.api("/api/wishlist", { method: "POST", body: payload });
-        window.FinEye.toast({ type: "success", message: "Added" });
+        await window.Vaani.api("/api/wishlist", { method: "POST", body: payload });
+        window.Vaani.toast({ type: "success", message: "Added" });
         close();
         await loadAndRender();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Add failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Add failed", message: err.message });
       }
     });
     form.querySelector("[name='item']")?.focus();
@@ -260,12 +260,12 @@
         notes: (data.get("notes") || null) || null,
       };
       try {
-        await window.FinEye.api(`/api/wishlist/${wish.id}`, { method: "PATCH", body: payload });
-        window.FinEye.toast({ type: "success", message: "Saved" });
+        await window.Vaani.api(`/api/wishlist/${wish.id}`, { method: "PATCH", body: payload });
+        window.Vaani.toast({ type: "success", message: "Saved" });
         close();
         await loadAndRender();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
       }
     });
   }
@@ -304,15 +304,15 @@
       };
       if (!(payload.amount > 0)) return;
       try {
-        await window.FinEye.api(`/api/wishlist/${wish.id}/contribute`, {
+        await window.Vaani.api(`/api/wishlist/${wish.id}/contribute`, {
           method: "POST",
           body: payload,
         });
-        window.FinEye.toast({ type: "success", message: "Contribution saved" });
+        window.Vaani.toast({ type: "success", message: "Contribution saved" });
         close();
         await loadAndRender();
       } catch (err) {
-        window.FinEye.toast({ type: "danger", title: "Contribute failed", message: err.message });
+        window.Vaani.toast({ type: "danger", title: "Contribute failed", message: err.message });
       }
     });
     form.querySelector("[name='amount']")?.focus();
@@ -336,9 +336,9 @@
     if (addBtn) addBtn.addEventListener("click", openAddModal);
 
     const colBtn = document.querySelector("[data-action='add-wishlist-column']");
-    if (colBtn && window.FinEye?.openAddColumnModal) {
+    if (colBtn && window.Vaani?.openAddColumnModal) {
       colBtn.addEventListener("click", () => {
-        window.FinEye.openAddColumnModal({
+        window.Vaani.openAddColumnModal({
           table: "wishlist",
           onAdded: () => loadAndRender(),
         });

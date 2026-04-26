@@ -1,4 +1,4 @@
-"""Health + liveness probe."""
+﻿"""Health + liveness probe."""
 from __future__ import annotations
 
 from fastapi import APIRouter
