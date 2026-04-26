@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "budgets" %}
+{% block title %}Budget rules · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Budget rules</h1>
+    <p class="page-head__sub">Per-category monthly budget + carry cap. Medical and Emergency caps absorb overflow.</p>
+  </div>
+</section>
+
+<div class="grid-1" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-4);">
+  <div class="card">
+    <div class="card__head">
+      <h2 class="card__title">Rules per category</h2>
+      <span class="muted" style="font-size: var(--fs-xs);">Priority sets evaluation order in the overflow engine.</span>
+    </div>
+
+    {% if budget_rules and budget_rules|length %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="num">Monthly budget</th>
+            <th class="num">Carry cap</th>
+            <th class="num">Priority</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in budget_rules %}
+            <tr>
+              <td>{{ r.category }}</td>
+              <td class="num mono">{{ r.monthly_display or r.monthly_budget }}</td>
+              <td class="num mono">{{ r.cap_display or r.carry_cap }}</td>
+              <td class="num mono">{{ r.priority }}</td>
+              <td class="right">
+                <button class="btn btn--ghost btn--sm" data-rule-edit="{{ r.category }}">Edit</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      {{ empty_state("No rules defined", "Add a rule for each category you want the overflow engine to track.", icon="list") }}
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Overflow caps</h2>
+    <p class="muted" style="font-size: var(--fs-sm);">Persisted to <span class="mono">meta.json</span>.</p>
+    <form id="caps-form" class="vstack" style="gap: var(--sp-3); margin-top: var(--sp-3);">
+      <div class="field">
+        <label class="field__label" for="med">Medical upper cap</label>
+        <input class="input input--num" id="med" name="medical_upper_cap" type="number" step="1" value="{{ caps.medical_upper_cap or 10000 }}">
+        <div class="field__hint">Accumulation cap (lifetime until drawn down).</div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="emerg">Emergency monthly cap</label>
+        <input class="input input--num" id="emerg" name="emergency_monthly_cap" type="number" step="1" value="{{ caps.emergency_monthly_cap or 5000 }}">
+        <div class="field__hint">Maximum absorbed per month.</div>
+      </div>
+      <button type="submit" class="btn btn--primary">Save caps</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("caps-form");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {};
+    new FormData(form).forEach((v, k) => payload[k] = Number(v));
+    try {
+      await window.FinEye.api("/api/budgets/caps", { method: "PUT", body: payload });
+      window.FinEye.toast({ type: "success", message: "Caps updated" });
+    } catch (err) {
+      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+    }
+  });
+})();
+</script>
+
+<style>@media (max-width: 860px) { .main > .grid-1 { grid-template-columns: 1fr !important; } }</style>
+<script src="/static/js/budgets.js" defer></script>
+{% endblock %}

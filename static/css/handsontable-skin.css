@@ -1,0 +1,245 @@
+/* =====================================================================
+   FinEye — Handsontable skin
+   Rebuild to match the luxurious aesthetic.
+   Dark mode: header bar = surface-2, body = surface-1, gold-hairline borders.
+   ===================================================================== */
+
+.fineye-grid-wrap {
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-4);
+  padding: 0;
+  padding-top: 1px;              /* keeps row 0 flush below the header rule */
+  overflow: visible;              /* was 'hidden' — was clipping first row above header baseline */
+  box-shadow: var(--shadow-1);
+}
+/* Give the first data row clear separation from the header bar */
+.fineye-grid-wrap .handsontable tbody tr:first-child td {
+  border-top: 1px solid var(--border-1) !important;
+}
+/* ht_clone_top IS the column headers — must remain visible.
+   Ensure it layers above body cells so the sticky bar reads cleanly. */
+.fineye-grid-wrap .handsontable .ht_clone_top,
+.fineye-grid-wrap .handsontable .ht_clone_top_left_corner {
+  z-index: 4;
+}
+:root[data-theme="dark"] .fineye-grid-wrap {
+  border-color: var(--gold-hairline);
+  box-shadow: var(--shadow-2);
+}
+
+/* Core */
+.handsontable {
+  font-family: var(--ff-sans);
+  font-size: var(--fs-sm);
+  color: var(--text-1);
+  background: var(--surface-1);
+}
+.handsontable .htCore { background: var(--surface-1); }
+
+/* Header bar = elevated surface */
+.handsontable thead th,
+.handsontable .ht_clone_top thead th,
+.handsontable th {
+  background: var(--surface-2) !important;
+  color: var(--text-3);
+  font-family: var(--ff-sans);
+  font-weight: var(--fw-semi);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  border-color: var(--border-1) !important;
+  border-right: 1px solid var(--border-1) !important;
+  padding: 10px var(--sp-3);
+}
+:root[data-theme="dark"] .handsontable thead th,
+:root[data-theme="dark"] .handsontable th {
+  border-color: var(--gold-hairline) !important;
+  border-right-color: var(--gold-hairline) !important;
+}
+
+/* Row headers */
+.handsontable .rowHeader,
+.handsontable th.rowHeader {
+  background: var(--surface-2) !important;
+  color: var(--text-3);
+  border-right: 1px solid var(--border-1) !important;
+}
+
+/* Body cells — tight, 40px rows */
+.handsontable td {
+  background: var(--surface-1);
+  color: var(--text-1);
+  border-color: var(--border-muted) !important;
+  padding: 10px 12px;
+  vertical-align: middle;
+  height: 40px;
+  line-height: 20px;
+}
+:root[data-theme="dark"] .handsontable td {
+  border-color: var(--border-muted) !important;
+}
+
+/* Numeric cells */
+.handsontable td.num,
+.handsontable td.htNumeric,
+.handsontable td[data-type="amount"] {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  text-align: right;
+}
+
+/* Remove zebra — cleaner editorial feel */
+.handsontable tr:nth-child(even) td { background: var(--surface-1); }
+
+/* Hover row */
+.handsontable tr:hover td { background: var(--surface-3); }
+
+/* Selection: gold hairline + 8% gold fill */
+.handsontable td.current,
+.handsontable td.area {
+  background: color-mix(in oklab, var(--gold) 8%, var(--surface-1)) !important;
+  color: var(--text-1);
+}
+.handsontable .wtBorder.current,
+.handsontable .wtBorder.area {
+  background-color: var(--gold) !important;
+}
+
+/* Edit mode input */
+.handsontableInput {
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid var(--gold) !important;
+  border-radius: var(--r-2);
+  font-family: var(--ff-sans);
+  font-size: var(--fs-sm);
+  padding: 6px 10px;
+  box-shadow: 0 0 0 3px var(--focus-ring-soft);
+}
+
+/* Dropdown editor — proper listbox with blur + gold hairline */
+.handsontable.listbox,
+.htAutocompleteArrow,
+.htDropdownMenu,
+.handsontable.htDropdown {
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  font-family: var(--ff-sans);
+}
+:root[data-theme="dark"] .handsontable.listbox,
+:root[data-theme="dark"] .handsontable.htDropdown,
+:root[data-theme="dark"] .htDropdownMenu {
+  border-color: var(--gold-hairline);
+  box-shadow: var(--shadow-3), var(--glow-gold);
+}
+@supports (backdrop-filter: blur(12px)) {
+  .handsontable.listbox, .handsontable.htDropdown {
+    backdrop-filter: blur(12px) saturate(1.3);
+  }
+}
+
+.handsontable.listbox table.htCore { background: transparent; }
+.handsontable.listbox td {
+  padding: 8px 12px !important;
+  border: 0 !important;
+  background: transparent;
+  color: var(--text-1);
+  font-size: var(--fs-sm);
+  height: auto !important;
+}
+.handsontable.listbox tr.current td,
+.handsontable.listbox td:hover {
+  background: var(--surface-3) !important;
+  color: var(--text-1);
+}
+
+/* Chip pills inside dropdown */
+.hot-chip-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  font-family: var(--ff-sans);
+  font-size: 0.68rem;
+  font-weight: var(--fw-medium);
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+.hot-chip-cell--need       { background: var(--chip-need-bg);   color: var(--chip-need-fg);   border-color: var(--chip-need-border); }
+.hot-chip-cell--want       { background: var(--chip-want-bg);   color: var(--chip-want-fg);   border-color: var(--chip-want-border); }
+.hot-chip-cell--investment { background: var(--chip-invest-bg); color: var(--chip-invest-fg); border-color: var(--chip-invest-border); }
+.hot-chip-cell--cash       { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in oklab, var(--warn) 30%, transparent); }
+.hot-chip-cell--paid       { background: var(--info-soft); color: var(--info); border-color: color-mix(in oklab, var(--info) 30%, transparent); }
+.hot-chip-cell--paid-by    { background: color-mix(in oklab, #a78bfa 12%, transparent); color: #7c3aed; border-color: color-mix(in oklab, #7c3aed 28%, transparent); }
+.hot-chip-cell--paid-for   { background: color-mix(in oklab, #34d399 12%, transparent); color: #059669; border-color: color-mix(in oklab, #059669 28%, transparent); }
+.hot-chip-cell--adjusted   { background: color-mix(in oklab, #94a3b8 12%, transparent); color: #475569; border-color: color-mix(in oklab, #475569 28%, transparent); }
+:root[data-theme="dark"] .hot-chip-cell--paid-by  { color: #c4b5fd; }
+:root[data-theme="dark"] .hot-chip-cell--paid-for { color: #6ee7b7; }
+:root[data-theme="dark"] .hot-chip-cell--adjusted { color: #94a3b8; }
+.hot-chip-cell--cat-food      { background: color-mix(in oklab, var(--cat-food) 14%, transparent); color: var(--cat-food); border-color: color-mix(in oklab, var(--cat-food) 32%, transparent); }
+.hot-chip-cell--cat-travel    { background: color-mix(in oklab, var(--cat-travel) 14%, transparent); color: var(--cat-travel); border-color: color-mix(in oklab, var(--cat-travel) 32%, transparent); }
+.hot-chip-cell--cat-enjoyment { background: color-mix(in oklab, var(--cat-enjoyment) 14%, transparent); color: var(--cat-enjoyment); border-color: color-mix(in oklab, var(--cat-enjoyment) 32%, transparent); }
+.hot-chip-cell--cat-misc      { background: color-mix(in oklab, var(--cat-misc) 14%, transparent); color: var(--cat-misc); border-color: color-mix(in oklab, var(--cat-misc) 32%, transparent); }
+
+:root[data-theme="dark"] .hot-chip-cell--cat-food      { color: #E0A478; }
+:root[data-theme="dark"] .hot-chip-cell--cat-travel    { color: #7FC4C4; }
+:root[data-theme="dark"] .hot-chip-cell--cat-enjoyment { color: #C09ED0; }
+:root[data-theme="dark"] .hot-chip-cell--cat-misc      { color: #B0B0A0; }
+
+/* Autocomplete arrow */
+.handsontable .htAutocompleteArrow {
+  color: var(--text-3);
+  font-size: 9px;
+  transition: color var(--dur-2) var(--ease-out);
+}
+.handsontable td.current .htAutocompleteArrow { color: var(--gold); }
+
+/* Resize handles */
+.handsontable .manualColumnResizer,
+.handsontable .manualRowResizer {
+  background: transparent;
+  transition: background var(--dur-2) var(--ease-out);
+}
+.handsontable .manualColumnResizer:hover,
+.handsontable .manualRowResizer:hover,
+.handsontable .manualColumnResizerHandle,
+.handsontable .manualRowResizerHandle {
+  background: var(--gold) !important;
+}
+
+/* Invalid cell — subtle underline, not bg flash */
+.handsontable td.htInvalid {
+  background: var(--surface-1) !important;
+  box-shadow: inset 0 -2px 0 var(--danger);
+  color: var(--text-1);
+}
+
+/* Scrollbars inside Hot */
+.handsontable .wtHolder::-webkit-scrollbar-thumb { background: var(--border-2); }
+:root[data-theme="dark"] .handsontable .wtHolder::-webkit-scrollbar-thumb { background: rgba(212, 171, 103, 0.16); }
+
+/* Context menu */
+.htContextMenu {
+  background: var(--surface-2) !important;
+  color: var(--text-1) !important;
+  border: 1px solid var(--border-2) !important;
+  border-radius: var(--r-3) !important;
+  box-shadow: var(--shadow-3) !important;
+  font-family: var(--ff-sans) !important;
+}
+:root[data-theme="dark"] .htContextMenu {
+  border-color: var(--gold-hairline) !important;
+  box-shadow: var(--shadow-3), var(--glow-gold) !important;
+}
+.htContextMenu table.htCore { background: transparent !important; }
+.htContextMenu td { color: var(--text-1) !important; padding: 8px 12px !important; }
+.htContextMenu tr.current td { background: var(--surface-3) !important; color: var(--text-1) !important; }

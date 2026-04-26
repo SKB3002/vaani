@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active_page = "expenses" %}
+{% block title %}Expenses · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Expenses</h1>
+    <p class="page-head__sub">
+      Spreadsheet-style ledger. Type, tab, save. Chip cells enforce the closed vocabulary.
+    </p>
+  </div>
+  <div class="hstack" style="gap: var(--sp-3);">
+    <div class="chip-row" aria-hidden="true" style="gap: var(--sp-2);">
+      <span class="chip chip--need">Need</span>
+      <span class="chip chip--want">Want</span>
+      <span class="chip chip--investment">Investment</span>
+    </div>
+    <a class="btn" href="/api/export/expenses.csv" download title="Download this table as CSV">Download CSV</a>
+  </div>
+</section>
+
+<div class="fineye-grid-wrap">
+  <div id="expenses-grid" role="grid" aria-label="Expenses ledger"></div>
+</div>
+
+<p class="muted" style="margin-top: var(--sp-4); font-size: var(--fs-xs);">
+  Tip: use <kbd>Enter</kbd> to commit a cell, <kbd>Tab</kbd> to move right, <kbd>Ctrl/Cmd + Z</kbd> to undo.
+  <span class="mono">Type</span> and <span class="mono">Category</span> values are restricted; dropdown appears on edit.
+</p>
+
+<script defer src="/static/js/grid_expenses.js?v=12"></script>
+{% endblock %}

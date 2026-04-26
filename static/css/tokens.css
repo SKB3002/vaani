@@ -1,0 +1,395 @@
+/* =====================================================================
+   FinEye Design Tokens — "Private banking meets sci-fi"
+   ---------------------------------------------------------------------
+   Design commitment (supersedes the earlier trust-green-only direction):
+   - Geometry: restrained radii (cards 8px, inputs/buttons 6px, pill chips).
+   - Palette: warm paper + emerald + gold (light); onyx + emerald + gold (dark).
+   - Typography: Fraunces serif display + Inter Tight sans UI + JetBrains Mono numerals.
+   - Dark mode is a real 3-layer surface system with gold hairlines, not grey-on-grey.
+   - Gold is reserved for moments of emphasis (focus, KPI rule, selected-row underline).
+   - No purple. No loud gradients on CTAs. No emoji. No playful rounded everything.
+   ===================================================================== */
+
+:root {
+  /* ----------  Brand / semantic hues (hue only) ---------- */
+  --hue-need:        214;   /* deep sapphire   */
+  --hue-want:        350;   /* mulled wine     */
+  --hue-investment:  158;   /* emerald         */
+  --hue-info:        205;
+  --hue-success:     158;
+  --hue-warn:         36;
+  --hue-danger:        6;
+
+  /* ----------  Category accents (refined, colourblind-safe) ---------- */
+  --cat-food:       #8A4F2D;   /* cinnamon   */
+  --cat-travel:     #2D6B6B;   /* teal       */
+  --cat-enjoyment:  #6B3E7A;   /* aubergine (accent only, not brand) */
+  --cat-misc:       #5C5C4A;   /* olive-grey */
+
+  /* ----------  Font families ---------- */
+  --ff-display: "Fraunces", "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
+  --ff-sans:    "Inter Tight", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --ff-mono:    "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* ----------  Type scale (fluid, editorial) ---------- */
+  --fs-xs:   clamp(0.70rem, 0.68rem + 0.1vw, 0.76rem);
+  --fs-sm:   clamp(0.82rem, 0.80rem + 0.1vw, 0.88rem);
+  --fs-base: clamp(0.95rem, 0.92rem + 0.15vw, 1.02rem);
+  --fs-md:   clamp(1.05rem, 1.00rem + 0.2vw, 1.18rem);
+  --fs-lg:   clamp(1.30rem, 1.15rem + 0.5vw, 1.55rem);
+  --fs-xl:   clamp(1.70rem, 1.40rem + 1.0vw, 2.25rem);
+  --fs-2xl:  clamp(2.25rem, 1.80rem + 1.8vw, 3.25rem);
+  --fs-3xl:  clamp(2.75rem, 2.10rem + 2.6vw, 4.00rem);
+  --fs-hero: clamp(2.50rem, 1.80rem + 3.5vw, 4.50rem);
+
+  --lh-tight: 1.08;
+  --lh-snug:  1.28;
+  --lh-body:  1.55;
+  --lh-loose: 1.70;
+
+  --tracking-display: -0.02em;
+  --tracking-body:     0;
+  --tracking-caps:     0.12em;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  /* ----------  Spacing (4/8 system) ---------- */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+  --sp-10: 128px;
+
+  /* ----------  Radii ---------- */
+  --r-0: 0;
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 6px;   /* inputs, buttons */
+  --r-4: 8px;   /* cards */
+  --r-5: 12px;  /* modals */
+  --r-pill: 999px;
+
+  /* ----------  Z-index ---------- */
+  --z-base: 0;
+  --z-sticky: 50;
+  --z-nav: 100;
+  --z-dropdown: 500;
+  --z-modal: 1000;
+  --z-toast: 2000;
+  --z-tooltip: 3000;
+
+  /* ----------  Motion ---------- */
+  --dur-1:   90ms;
+  --dur-2:  160ms;
+  --dur-3:  240ms;
+  --dur-4:  360ms;
+  --dur-5:  560ms;
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:     cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ====================================================================
+     LIGHT THEME — "Private banking annual report"
+     Warm paper background, near-black text, deep emerald + subdued gold.
+     ==================================================================== */
+  color-scheme: light;
+
+  /* Surfaces (3-layer + page) */
+  --surface-0: #FAF8F3;   /* paper — page background */
+  --surface-1: #FFFFFF;   /* cards                   */
+  --surface-2: #FDFCF8;   /* elevated (modals, dropdowns) */
+  --surface-3: #F3EFE6;   /* hover fill / wells      */
+  --surface-inverse: #14110D;
+
+  /* Text (warm-toned) */
+  --text-1: #1A1613;          /* primary   */
+  --text-2: #5C554E;          /* secondary */
+  --text-3: #8F8780;          /* muted     */
+  --text-disabled: #BDB5AA;
+  --text-inverse: #F0EAE0;
+
+  /* Borders (warm, hair-thin) */
+  --border-1: rgba(30, 25, 20, 0.08);
+  --border-2: rgba(30, 25, 20, 0.14);
+  --border-strong: rgba(30, 25, 20, 0.24);
+  --border-muted: rgba(30, 25, 20, 0.06);
+
+  /* Accents */
+  --accent:        #0F6B47;   /* deep emerald — wealth */
+  --accent-hover:  #0C5A3C;
+  --accent-press:  #0A4B31;
+  --accent-soft:   #E4EFE9;
+  --on-accent:     #FAF8F3;
+
+  --gold:          #B8934A;   /* subdued gold — rare accent */
+  --gold-hover:    #A67F3A;
+  --gold-soft:     #F5EBD3;
+  --gold-hairline: rgba(184, 147, 74, 0.28);
+
+  /* Semantic */
+  --success:  #2C8A5E;  --success-soft: #E3F1EA;
+  --warn:     #C4903A;  --warn-soft:    #F8ECD2;
+  --danger:   #B54434;  --danger-soft:  #F6E1DC;
+  --info:     #3E7B9E;  --info-soft:    #E2ECF3;
+
+  /* Brand chip fills — refined, editorial */
+  --chip-need-bg:       #E3EAF2;   /* sapphire tint */
+  --chip-need-fg:       #2D5F8A;
+  --chip-need-border:   rgba(45, 95, 138, 0.22);
+
+  --chip-want-bg:       #F3E1E5;   /* mulled wine tint */
+  --chip-want-fg:       #A03E4E;
+  --chip-want-border:   rgba(160, 62, 78, 0.22);
+
+  --chip-invest-bg:     #E4EFE9;   /* emerald tint */
+  --chip-invest-fg:     #0F6B47;
+  --chip-invest-border: rgba(15, 107, 71, 0.22);
+
+  /* Numeric */
+  --num-positive: #0F6B47;
+  --num-negative: #B54434;
+  --num-neutral:  var(--text-1);
+
+  /* Focus ring (gold) */
+  --focus-ring: var(--gold);
+  --focus-ring-soft: rgba(184, 147, 74, 0.35);
+
+  /* Shadows — barely-there, printed on paper */
+  --shadow-0: 0 0 0 0 transparent;
+  --shadow-1: 0 1px 2px rgba(26, 22, 19, 0.04), 0 2px 8px rgba(26, 22, 19, 0.03);
+  --shadow-2: 0 1px 2px rgba(26, 22, 19, 0.04), 0 4px 16px rgba(26, 22, 19, 0.05);
+  --shadow-3: 0 2px 6px rgba(26, 22, 19, 0.06), 0 10px 32px rgba(26, 22, 19, 0.08);
+  --shadow-4: 0 4px 12px rgba(26, 22, 19, 0.08), 0 20px 56px rgba(26, 22, 19, 0.10);
+  --shadow-focus: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--focus-ring);
+  --shadow-inset-hi: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Glow (gold) — modals, focus on dark */
+  --glow-gold: 0 0 0 1px rgba(184, 147, 74, 0.18), 0 0 32px rgba(184, 147, 74, 0.10);
+
+  /* Glass (light) */
+  --glass-bg:     rgba(253, 252, 248, 0.72);
+  --glass-border: rgba(30, 25, 20, 0.10);
+
+  /* Chart palette — drawn from tokens */
+  --chart-1: #0F6B47;   /* emerald    */
+  --chart-2: #2D5F8A;   /* sapphire   */
+  --chart-3: #A03E4E;   /* wine       */
+  --chart-4: #8A4F2D;   /* cinnamon   */
+  --chart-5: #2D6B6B;   /* teal       */
+  --chart-6: #B8934A;   /* gold       */
+  --chart-7: #6B3E7A;   /* aubergine  */
+  --chart-8: #5C5C4A;   /* olive      */
+  --chart-grid: rgba(30, 25, 20, 0.06);
+  --chart-axis: #8F8780;
+  --chart-text: #5C554E;
+}
+
+/* ====================================================================
+   DARK THEME — "Bloomberg terminal 2030"
+   True onyx with warm brown tint, 3 surface layers, gold hairlines.
+   ==================================================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces — three stacked layers that visibly elevate */
+  --surface-0: #0A0906;   /* onyx background       */
+  --surface-1: #14110D;   /* cards                 */
+  --surface-2: #1C1814;   /* modals, dropdowns     */
+  --surface-3: #24201A;   /* hover on surface-2    */
+  --surface-inverse: #FAF8F3;
+
+  --text-1: #F0EAE0;      /* cream  */
+  --text-2: #B8B0A4;      /* warm grey */
+  --text-3: #7A7166;      /* muted     */
+  --text-disabled: #4A443D;
+  --text-inverse: #14110D;
+
+  /* Borders — subtle gold hairlines */
+  --border-1: rgba(184, 147, 74, 0.12);
+  --border-2: rgba(184, 147, 74, 0.18);
+  --border-strong: rgba(184, 147, 74, 0.32);
+  --border-muted: rgba(240, 234, 224, 0.06);
+
+  --accent:        #3FB58A;   /* brighter emerald, readable on onyx */
+  --accent-hover:  #4FCB9D;
+  --accent-press:  #2E9E76;
+  --accent-soft:   rgba(63, 181, 138, 0.12);
+  --on-accent:     #0A0906;
+
+  --gold:          #D4AB67;
+  --gold-hover:    #E0BC7F;
+  --gold-soft:     rgba(212, 171, 103, 0.12);
+  --gold-hairline: rgba(212, 171, 103, 0.28);
+
+  --success:  #3FB58A;  --success-soft: rgba(63, 181, 138, 0.12);
+  --warn:     #E0B269;  --warn-soft:    rgba(224, 178, 105, 0.12);
+  --danger:   #E27A6A;  --danger-soft:  rgba(226, 122, 106, 0.14);
+  --info:     #6BA3C4;  --info-soft:    rgba(107, 163, 196, 0.12);
+
+  /* Brand chips — deeper saturation with lighter text */
+  --chip-need-bg:       #1E3A5C;
+  --chip-need-fg:       #B8D4F0;
+  --chip-need-border:   rgba(184, 212, 240, 0.22);
+
+  --chip-want-bg:       #4A1E28;
+  --chip-want-fg:       #F0C4CC;
+  --chip-want-border:   rgba(240, 196, 204, 0.22);
+
+  --chip-invest-bg:     #1E4A38;
+  --chip-invest-fg:     #B8E0CC;
+  --chip-invest-border: rgba(184, 224, 204, 0.22);
+
+  --num-positive: #3FB58A;
+  --num-negative: #E27A6A;
+  --num-neutral:  var(--text-1);
+
+  --focus-ring: var(--gold);
+  --focus-ring-soft: rgba(212, 171, 103, 0.30);
+
+  /* Shadows — mostly invisible on near-black; we lean on inset-highlight + gold hairline */
+  --shadow-0: 0 0 0 0 transparent;
+  --shadow-1: inset 0 1px 0 rgba(240, 234, 224, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: inset 0 1px 0 rgba(240, 234, 224, 0.04), 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-3: inset 0 1px 0 rgba(240, 234, 224, 0.05), 0 10px 32px rgba(0, 0, 0, 0.7);
+  --shadow-4: inset 0 1px 0 rgba(240, 234, 224, 0.06), 0 24px 64px rgba(0, 0, 0, 0.75);
+  --shadow-focus: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--focus-ring);
+  --shadow-inset-hi: inset 0 1px 0 rgba(240, 234, 224, 0.05);
+
+  --glow-gold: 0 0 0 1px rgba(212, 171, 103, 0.22), 0 0 28px rgba(212, 171, 103, 0.10);
+
+  --glass-bg:     rgba(20, 17, 13, 0.72);
+  --glass-border: rgba(212, 171, 103, 0.14);
+
+  --chart-1: #3FB58A;
+  --chart-2: #6BA3C4;
+  --chart-3: #E27A6A;
+  --chart-4: #D49060;
+  --chart-5: #5FA5A5;
+  --chart-6: #D4AB67;
+  --chart-7: #A77FB5;
+  --chart-8: #9A9580;
+  --chart-grid: rgba(240, 234, 224, 0.06);
+  --chart-axis: #7A7166;
+  --chart-text: #B8B0A4;
+}
+
+/* Media-query fallback when user has not picked explicitly */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+
+    --surface-0: #0A0906;
+    --surface-1: #14110D;
+    --surface-2: #1C1814;
+    --surface-3: #24201A;
+    --surface-inverse: #FAF8F3;
+
+    --text-1: #F0EAE0;
+    --text-2: #B8B0A4;
+    --text-3: #7A7166;
+    --text-disabled: #4A443D;
+    --text-inverse: #14110D;
+
+    --border-1: rgba(184, 147, 74, 0.12);
+    --border-2: rgba(184, 147, 74, 0.18);
+    --border-strong: rgba(184, 147, 74, 0.32);
+    --border-muted: rgba(240, 234, 224, 0.06);
+
+    --accent:        #3FB58A;
+    --accent-hover:  #4FCB9D;
+    --accent-press:  #2E9E76;
+    --accent-soft:   rgba(63, 181, 138, 0.12);
+    --on-accent:     #0A0906;
+
+    --gold:          #D4AB67;
+    --gold-hover:    #E0BC7F;
+    --gold-soft:     rgba(212, 171, 103, 0.12);
+    --gold-hairline: rgba(212, 171, 103, 0.28);
+
+    --success:  #3FB58A;  --success-soft: rgba(63, 181, 138, 0.12);
+    --warn:     #E0B269;  --warn-soft:    rgba(224, 178, 105, 0.12);
+    --danger:   #E27A6A;  --danger-soft:  rgba(226, 122, 106, 0.14);
+    --info:     #6BA3C4;  --info-soft:    rgba(107, 163, 196, 0.12);
+
+    --chip-need-bg:       #1E3A5C;
+    --chip-need-fg:       #B8D4F0;
+    --chip-need-border:   rgba(184, 212, 240, 0.22);
+    --chip-want-bg:       #4A1E28;
+    --chip-want-fg:       #F0C4CC;
+    --chip-want-border:   rgba(240, 196, 204, 0.22);
+    --chip-invest-bg:     #1E4A38;
+    --chip-invest-fg:     #B8E0CC;
+    --chip-invest-border: rgba(184, 224, 204, 0.22);
+
+    --num-positive: #3FB58A;
+    --num-negative: #E27A6A;
+    --focus-ring: var(--gold);
+    --focus-ring-soft: rgba(212, 171, 103, 0.30);
+
+    --shadow-1: inset 0 1px 0 rgba(240, 234, 224, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: inset 0 1px 0 rgba(240, 234, 224, 0.04), 0 4px 20px rgba(0, 0, 0, 0.6);
+    --shadow-3: inset 0 1px 0 rgba(240, 234, 224, 0.05), 0 10px 32px rgba(0, 0, 0, 0.7);
+    --shadow-4: inset 0 1px 0 rgba(240, 234, 224, 0.06), 0 24px 64px rgba(0, 0, 0, 0.75);
+    --glow-gold: 0 0 0 1px rgba(212, 171, 103, 0.22), 0 0 28px rgba(212, 171, 103, 0.10);
+    --glass-bg:     rgba(20, 17, 13, 0.72);
+    --glass-border: rgba(212, 171, 103, 0.14);
+
+    --chart-1: #3FB58A; --chart-2: #6BA3C4; --chart-3: #E27A6A;
+    --chart-4: #D49060; --chart-5: #5FA5A5; --chart-6: #D4AB67;
+    --chart-7: #A77FB5; --chart-8: #9A9580;
+    --chart-grid: rgba(240, 234, 224, 0.06);
+    --chart-axis: #7A7166;
+    --chart-text: #B8B0A4;
+  }
+}
+
+/* Reduced motion — neutralise durations */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --dur-4: 0ms; --dur-5: 0ms;
+  }
+}
+
+/* M5: chart palette — The Royal Collection (desaturated jewel tones).
+   Calibrated for luminance on dark, depth on light. Antique gold is reserved
+   as an accent for the current value or highest peak — never series-wide. */
+:root {
+  --chart-need: #324B71;         /* Sapphire — stable, authoritative */
+  --chart-want: #A35849;         /* Burned Sienna — urgent but expensive */
+  --chart-investment: #4D6D62;   /* Emerald Shadow — growth, not traffic-light */
+  --chart-food: #C5A059;         /* Antique Gold — luxury spark */
+  --chart-travel: #5A7A8C;       /* Steel — sapphire sibling */
+  --chart-enjoyment: #6E5A7E;    /* Dusty Amethyst — regal variety */
+  --chart-misc: #8A7555;         /* Bronze — grounded neutral */
+  --chart-accent: #C5A059;       /* Antique Gold — highlights only */
+
+  --chart-grid: #EAE7E1;         /* very faint */
+  --chart-tooltip-bg: #FFFFFF;
+  --chart-tooltip-border: #C5A059;
+  --chart-label: #5C5C5C;        /* soft charcoal */
+}
+[data-theme="dark"] {
+  --chart-need: #6D8BB8;         /* Sapphire lifted for onyx surfaces */
+  --chart-want: #C78875;         /* Burned Sienna lifted */
+  --chart-investment: #85A59A;   /* Emerald Shadow lifted */
+  --chart-food: #E0C68A;         /* Antique Gold lifted */
+  --chart-travel: #9AB5C5;       /* Steel lifted */
+  --chart-enjoyment: #A090B5;    /* Dusty Amethyst lifted */
+  --chart-misc: #B8A480;         /* Bronze lifted */
+  --chart-accent: #D4AB67;       /* Antique Gold — dark-mode */
+
+  --chart-grid: #252930;         /* subtle */
+  --chart-tooltip-bg: #161B22;
+  --chart-tooltip-border: #C5A059;
+  --chart-label: #A0A0A0;        /* silver grey */
+}

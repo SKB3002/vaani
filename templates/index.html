@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "home" %}
+{% block title %}Overview · FinEye{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Good {{ greeting or "day" }}.</h1>
+    <p class="page-head__sub">
+      Today is
+      <span class="mono">{{ today_str or "" }}</span>{% if timezone %}
+      &middot; <span class="mono">{{ timezone }}</span>{% endif %}.
+      Ledger is the source of truth — voice, manual, and imports all flow here.
+    </p>
+  </div>
+  <div class="hstack">
+    <a href="/imports" class="btn" style="border-bottom:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import Excel
+    </a>
+    <a href="/expenses" class="btn btn--primary" style="border-bottom:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Quick add
+    </a>
+  </div>
+</section>
+
+<!-- KPI row -->
+<section class="grid-4" aria-label="Headline stats" style="margin-bottom: var(--sp-5);">
+  <div class="kpi">
+    <div class="kpi__label">Today</div>
+    <div class="kpi__value" data-kpi="today">
+      {% if kpis and kpis.today is not none %}{{ kpis.today_display }}{% else %}—{% endif %}
+    </div>
+    <div class="kpi__delta">spent so far</div>
+  </div>
+  <div class="kpi kpi--want">
+    <div class="kpi__label">This month</div>
+    <div class="kpi__value" data-kpi="month">
+      {% if kpis and kpis.month is not none %}{{ kpis.month_display }}{% else %}—{% endif %}
+    </div>
+    <div class="kpi__delta">total outflow</div>
+  </div>
+  <div class="kpi kpi--invest">
+    <div class="kpi__label">Cash on hand</div>
+    <div class="kpi__value" data-kpi="cash">
+      {% if kpis and kpis.cash is not none %}{{ kpis.cash_display }}{% else %}—{% endif %}
+    </div>
+    <div class="kpi__delta">wallet</div>
+  </div>
+  <div class="kpi kpi--need">
+    <div class="kpi__label">Online balance</div>
+    <div class="kpi__value" data-kpi="online">
+      {% if kpis and kpis.online is not none %}{{ kpis.online_display }}{% else %}—{% endif %}
+    </div>
+    <div class="kpi__delta">bank + UPI</div>
+  </div>
+</section>
+
+<section class="grid-1" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-4);" aria-label="Recent activity and quick capture">
+  <!-- Recent expenses card -->
+  <div class="card">
+    <div class="card__head">
+      <div>
+        <h2 class="card__title">Last 5 expenses</h2>
+        <div class="card__sub">Most recent entries from <span class="mono">expenses.csv</span></div>
+      </div>
+      <a href="/expenses" class="btn btn--ghost btn--sm" style="border-bottom:none;">Open grid →</a>
+    </div>
+    {% if recent_expenses and recent_expenses|length %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Expense</th>
+            <th>Type</th>
+            <th>Payment</th>
+            <th class="num">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in recent_expenses %}
+            {% set t = row.type_category.split(', ')[0] if row.type_category else '' %}
+            {% set variant = 'need' if t == 'Need' else ('want' if t == 'Want' else ('investment' if t == 'Investment' else '')) %}
+            <tr>
+              <td class="mono">{{ row.date }}</td>
+              <td>{{ row.expense_name }}</td>
+              <td>
+                {% if variant %}<span class="chip chip--{{ variant }}">{{ row.type_category }}</span>{% else %}—{% endif %}
+              </td>
+              <td>
+                {% if row.payment_method == 'paid_cash' %}<span class="chip chip--cash">paid_cash</span>
+                {% elif row.payment_method == 'paid' %}<span class="chip chip--paid">paid</span>
+                {% elif row.payment_method == 'paid_by' %}<span class="chip chip--paid-by">paid_by</span>
+                {% elif row.payment_method == 'paid_for' %}<span class="chip chip--paid-for">paid_for</span>
+                {% elif row.payment_method == 'adjusted' %}<span class="chip chip--adjusted">adjusted</span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="num">{{ row.amount_display if row.amount_display else row.amount }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      {{ empty_state(
+        "No expenses yet",
+        "Use the voice button, open the Expenses grid, or import an Excel file to get started.",
+        cta_label="Import Excel",
+        cta_href="/imports",
+        icon="list"
+      ) }}
+    {% endif %}
+  </div>
+
+  <!-- Voice hero / quick actions -->
+  <div class="card" style="display:flex; flex-direction:column; gap: var(--sp-4);">
+    <div>
+      <div class="kpi__label" style="margin-bottom: var(--sp-2);">Voice capture</div>
+      <h2 class="card__title" style="font-size: var(--fs-lg);">Speak, and it lands in the ledger.</h2>
+      <p class="muted" style="font-size: var(--fs-sm); margin-top: var(--sp-2);">
+        Hold the mic button, say <em>"spent 250 at Zomato on UPI"</em>, and FinEye will parse and append.
+      </p>
+    </div>
+
+    <div style="display:flex; align-items:center; gap: var(--sp-3);">
+      <button type="button" class="btn btn--voice" data-state="idle" data-voice-ptt aria-label="Push to talk" style="width:56px; height:56px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <path d="M12 19v4"/>
+          <path d="M8 23h8"/>
+        </svg>
+      </button>
+      <div>
+        <div style="font-size: var(--fs-sm); font-weight: var(--fw-semi);">Hold to record</div>
+        <div class="muted" style="font-size: var(--fs-xs);">Transcript shows here. Keyboard: space + hold.</div>
+      </div>
+    </div>
+
+    <div class="vstack" style="gap: var(--sp-2); border-top: 1px solid var(--border-1); padding-top: var(--sp-3);">
+      <a href="/expenses" class="btn" style="border-bottom:none;">Open expenses grid</a>
+      <a href="/balances" class="btn btn--ghost" style="border-bottom:none;">Seed cash / online balances</a>
+      <a href="/imports"  class="btn btn--ghost" style="border-bottom:none;">Import from Excel or CSV</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Responsive: stack right column under the expenses card on narrow screens */
+  @media (max-width: 900px) {
+    section.grid-1[aria-label="Recent activity and quick capture"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+{% endblock %}

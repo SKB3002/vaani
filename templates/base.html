@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="FinEye — personal finance tracker with voice capture, budget overflow engine, and Indian-rupee-aware spreadsheet ledger.">
+  <title>{% block title %}FinEye — Personal Finance{% endblock %}</title>
+
+  <!-- Fonts — Fraunces (serif display) + Inter Tight (sans UI) + JetBrains Mono (numbers) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+  <!-- Design system -->
+  <link rel="stylesheet" href="/static/css/tokens.css?v=2">
+  <link rel="stylesheet" href="/static/css/base.css?v=2">
+  <link rel="stylesheet" href="/static/css/components.css?v=2">
+  <link rel="stylesheet" href="/static/css/handsontable-skin.css?v=2">
+  <link rel="stylesheet" href="/static/css/charts.css?v=2">
+
+  <!-- Handsontable (community) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.js"></script>
+
+  <!-- Chart.js 4 -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Bridge CSS chart tokens to JS -->
+  <script>
+    (function () {
+      function readChartColors() {
+        const s = getComputedStyle(document.documentElement);
+        return {
+          palette: [1,2,3,4,5,6,7,8].map(i => s.getPropertyValue("--chart-" + i).trim()),
+          grid: s.getPropertyValue("--chart-grid").trim(),
+          axis: s.getPropertyValue("--chart-axis").trim(),
+          text: s.getPropertyValue("--chart-text").trim(),
+        };
+      }
+      window.FINEYE_CHART_COLORS = readChartColors();
+      document.addEventListener("fineye:themechange", () => {
+        window.FINEYE_CHART_COLORS = readChartColors();
+        document.dispatchEvent(new CustomEvent("fineye:chartcolors", { detail: window.FINEYE_CHART_COLORS }));
+      });
+    })();
+  </script>
+
+  <script defer src="/static/js/app.js?v=2"></script>
+  <script defer src="/static/js/voice.js?v=3"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a href="#main-content" class="visually-hidden">Skip to content</a>
+
+  <div class="app">
+    <header class="topbar" role="banner">
+      <a href="/" class="topbar__logo" style="border-bottom:none;">
+        <span class="topbar__logo-dot" aria-hidden="true"></span>
+        <span>FinEye</span>
+      </a>
+
+      <div class="topbar__actions">
+        {% include "partials/voice_button.html" %}
+
+        <button
+          type="button"
+          class="btn btn--ghost btn--icon theme-toggle"
+          data-action="toggle-theme"
+          aria-label="Toggle color theme"
+          title="Toggle theme"
+        >
+          <span data-when="light" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </span>
+          <span data-when="dark" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </span>
+        </button>
+
+        <a href="/settings" class="btn btn--ghost btn--icon" aria-label="Settings" title="Settings" style="border-bottom:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <aside class="sidebar" role="navigation" aria-label="Primary">
+      <div class="sidebar__heading">Ledger</div>
+      <nav class="nav">
+        <a href="/"          class="nav__item" {% if active_page == "home" %}aria-current="page"{% endif %}>Overview</a>
+        <a href="/expenses"  class="nav__item" {% if active_page == "expenses" %}aria-current="page"{% endif %}>Expenses</a>
+        <a href="/balances"  class="nav__item" {% if active_page == "balances" %}aria-current="page"{% endif %}>Balances</a>
+      </nav>
+
+      <div class="sidebar__heading">Planning</div>
+      <nav class="nav">
+        <a href="/investments"      class="nav__item" {% if active_page == "investments" %}aria-current="page"{% endif %}>Investments</a>
+        <a href="/wishlist"         class="nav__item" {% if active_page == "wishlist" %}aria-current="page"{% endif %}>Wishlist</a>
+        <a href="/goals/overview"   class="nav__item" {% if active_page == "goals_a" %}aria-current="page"{% endif %}>Goals: Overview</a>
+        <a href="/goals/sources"    class="nav__item" {% if active_page == "goals_b" %}aria-current="page"{% endif %}>Goals: Sources</a>
+      </nav>
+
+      <div class="sidebar__heading">Budgets</div>
+      <nav class="nav">
+        <a href="/budgets"          class="nav__item" {% if active_page == "budgets" %}aria-current="page"{% endif %}>Rules</a>
+        <a href="/budgets/monthly"  class="nav__item" {% if active_page == "budgets_monthly" %}aria-current="page"{% endif %}>Monthly (Table C)</a>
+      </nav>
+
+      <div class="sidebar__heading">Tools</div>
+      <nav class="nav">
+        <a href="/charts"   class="nav__item" {% if active_page == "charts" %}aria-current="page"{% endif %}>Charts</a>
+        <a href="/imports"  class="nav__item" {% if active_page == "imports" %}aria-current="page"{% endif %}>Import</a>
+        <a href="/settings" class="nav__item" {% if active_page == "settings" %}aria-current="page"{% endif %}>Settings</a>
+      </nav>
+    </aside>
+
+    <main class="main" id="main-content" role="main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% include "partials/toast_container.html" %}
+  {% block body_end %}{% endblock %}
+</body>
+</html>

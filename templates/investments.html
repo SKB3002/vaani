@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set active_page = "investments" %}
+{% block title %}Investments · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Investments</h1>
+    <p class="page-head__sub">
+      Monthly planning grid. Add columns on the fly — new columns are forward-only (prior months keep their NaN).
+    </p>
+  </div>
+  <div class="hstack">
+    <button type="button" class="btn" data-action="add-investment-month">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add month
+    </button>
+    <button type="button" class="btn btn--primary" data-action="add-investment-column">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add column
+    </button>
+    <a class="btn" href="/api/export/investments.csv" download title="Download this table as CSV">Download CSV</a>
+  </div>
+</section>
+
+<div class="fineye-grid-wrap">
+  <div id="investments-grid" role="grid" aria-label="Investments monthly grid"></div>
+  <div id="investments-footer" class="hstack" style="gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-top: 1px solid var(--border-subtle); font-size: var(--fs-sm);" aria-label="Column totals"></div>
+</div>
+
+<!-- Add-column modal template (shared with add_column_modal.js) -->
+<template id="tpl-add-column-modal">
+  <div class="modal-backdrop" data-modal="add-column" role="dialog" aria-modal="true" aria-labelledby="addcol-title">
+    <div class="modal">
+      <div class="modal__head">
+        <h3 class="modal__title" id="addcol-title">Add investment column</h3>
+        <button type="button" class="btn btn--ghost btn--icon" data-action="close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form class="vstack" style="gap: var(--sp-3);">
+        <div class="field">
+          <label class="field__label" for="addcol-label">Label</label>
+          <input class="input" id="addcol-label" name="label" placeholder="e.g. Crypto" required>
+          <div class="field__hint">Displayed in the column header.</div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="addcol-key">Key <span class="muted">(optional)</span></label>
+          <input class="input mono" id="addcol-key" name="key" placeholder="auto — e.g. crypto" pattern="[a-z0-9_]*">
+          <div class="field__hint">Lowercase, underscores only. Auto-derived from label if blank.</div>
+        </div>
+        <input type="hidden" name="dtype" value="number">
+        <div class="modal__foot">
+          <button type="button" class="btn" data-action="close">Cancel</button>
+          <button type="submit" class="btn btn--primary">Add column</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script defer src="/static/js/partials/add_column_modal.js"></script>
+<script defer src="/static/js/grid_investments.js?v=3"></script>
+{% endblock %}

@@ -1,0 +1,45 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Env — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data (keep .gitkeep so folders are tracked)
+data/**
+!data/.gitkeep
+.wal/**
+!.wal/.gitkeep
+.tmp/**
+!.tmp/.gitkeep
+
+# Hub plugin usage log (local only)
+.hub/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Windows
+desktop.ini

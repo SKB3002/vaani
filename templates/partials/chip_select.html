@@ -1,0 +1,77 @@
+{# ---------------------------------------------------------------------------
+   chip_select — render a grouped radio as a row of pressable chips.
+   Args:
+     name        form field name
+     options     list of {value, label, variant} OR list of strings
+     selected    currently-selected value
+     searchable  if True, include a filter input (Settings page uses this)
+     label       optional visible label
+   --------------------------------------------------------------------------- #}
+{% macro chip_select(name, options, selected=None, searchable=False, label=None) -%}
+<div class="field">
+  {% if label %}<label class="field__label" for="cs-{{ name }}">{{ label }}</label>{% endif %}
+  {% if searchable %}
+    <input type="search" id="cs-{{ name }}-filter" class="input input--search" placeholder="Filter…" aria-controls="cs-{{ name }}">
+  {% endif %}
+  <div id="cs-{{ name }}" class="chip-select" role="radiogroup" aria-label="{{ label or name }}">
+    {% for opt in options %}
+      {% set val = opt.value if opt is mapping else opt %}
+      {% set lab = opt.label if opt is mapping else opt %}
+      {% set variant = opt.variant if opt is mapping else "" %}
+      <button
+        type="button"
+        role="radio"
+        class="chip chip--lg{% if variant %} chip--{{ variant }}{% endif %}"
+        data-chip-value="{{ val }}"
+        data-chip-group="{{ name }}"
+        aria-checked="{{ 'true' if val == selected else 'false' }}"
+        aria-pressed="{{ 'true' if val == selected else 'false' }}"
+      >{{ lab }}</button>
+    {% endfor %}
+    <input type="hidden" name="{{ name }}" value="{{ selected or '' }}">
+  </div>
+</div>
+<script>
+  (function () {
+    const group = document.currentScript.previousElementSibling.querySelector("#cs-{{ name }}");
+    if (!group) return;
+    const hidden = group.querySelector("input[type='hidden']");
+    group.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-chip-value]");
+      if (!chip) return;
+      group.querySelectorAll("[data-chip-value]").forEach(c => {
+        c.setAttribute("aria-checked", "false");
+        c.setAttribute("aria-pressed", "false");
+      });
+      chip.setAttribute("aria-checked", "true");
+      chip.setAttribute("aria-pressed", "true");
+      hidden.value = chip.dataset.chipValue;
+      hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    group.addEventListener("keydown", (e) => {
+      if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
+      const chips = Array.from(group.querySelectorAll("[data-chip-value]"));
+      const idx = chips.indexOf(document.activeElement);
+      let next = idx;
+      if (e.key === "ArrowRight") next = (idx + 1) % chips.length;
+      if (e.key === "ArrowLeft")  next = (idx - 1 + chips.length) % chips.length;
+      if (e.key === "Home") next = 0;
+      if (e.key === "End")  next = chips.length - 1;
+      chips[next].focus();
+      chips[next].click();
+      e.preventDefault();
+    });
+    {% if searchable %}
+    const filter = document.getElementById("cs-{{ name }}-filter");
+    if (filter) {
+      filter.addEventListener("input", () => {
+        const q = filter.value.toLowerCase();
+        group.querySelectorAll("[data-chip-value]").forEach(c => {
+          c.style.display = c.textContent.toLowerCase().includes(q) ? "" : "none";
+        });
+      });
+    }
+    {% endif %}
+  })();
+</script>
+{%- endmacro %}

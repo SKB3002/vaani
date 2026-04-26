@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "goals_b" %}
+{% block title %}Goals: Sources · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Goals — sources</h1>
+    <p class="page-head__sub">Table B: how much came from manual contributions vs auto-added by the overflow engine.</p>
+  </div>
+</section>
+
+{% if goals and goals|length %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Goal</th>
+        <th class="num">Target</th>
+        <th class="num">Manual saved</th>
+        <th class="num">Auto added</th>
+        <th class="num">Total saved</th>
+        <th class="num">Monthly</th>
+        <th class="num">% complete</th>
+        <th class="num">Months left</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in goals %}
+        <tr>
+          <td>{{ g.goal_name }}</td>
+          <td class="num">{{ g.target_display or g.target_amount }}</td>
+          <td class="num">{{ g.manual_display or g.manual_saved }}</td>
+          <td class="num">{{ g.auto_display or g.auto_added }}</td>
+          <td class="num">{{ g.total_display or g.total_saved }}</td>
+          <td class="num">{{ g.monthly_display or g.monthly_contribution }}</td>
+          <td class="num">{{ g.pct_complete|round(1) }}%</td>
+          <td class="num">{{ g.months_left }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+  {{ empty_state("No goal sources yet", "Table B fills in once goals + contributions exist.", icon="chart") }}
+{% endif %}
+<script src="/static/js/goals.js" defer></script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set active_page = "wishlist" %}
+{% block title %}Wishlist · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Wishlist</h1>
+    <p class="page-head__sub">
+      Items you're saving toward. Contributions can either dual-write to the expense ledger or be manual tick-ups.
+    </p>
+  </div>
+  <div class="hstack">
+    <button type="button" class="btn" data-action="add-wishlist-column">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add column
+    </button>
+    <button type="button" class="btn btn--primary" data-action="open-wishlist-add">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add wish
+    </button>
+    <a class="btn" href="/api/export/wishlist.csv" download title="Download this table as CSV">Download CSV</a>
+  </div>
+</section>
+
+<section class="hstack" role="tablist" aria-label="Wishlist status filter" style="gap: var(--sp-1); margin-bottom: var(--sp-3);">
+  <button type="button" class="btn btn--primary" data-wishlist-filter="active" role="tab">Active</button>
+  <button type="button" class="btn" data-wishlist-filter="achieved" role="tab">Achieved</button>
+  <button type="button" class="btn" data-wishlist-filter="abandoned" role="tab">Abandoned</button>
+  <button type="button" class="btn btn--ghost" data-wishlist-filter="all" role="tab">All</button>
+</section>
+
+<div id="wishlist-grid" class="grid-3" role="list" aria-live="polite"></div>
+
+<!-- Add-column modal template (shared with add_column_modal.js) -->
+<template id="tpl-add-column-modal">
+  <div class="modal-backdrop" data-modal="add-column" role="dialog" aria-modal="true" aria-labelledby="addwc-title">
+    <div class="modal">
+      <div class="modal__head">
+        <h3 class="modal__title" id="addwc-title">Add wishlist column</h3>
+        <button type="button" class="btn btn--ghost btn--icon" data-action="close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form class="vstack" style="gap: var(--sp-3);">
+        <div class="field">
+          <label class="field__label" for="wcol-label">Label</label>
+          <input class="input" id="wcol-label" name="label" required>
+        </div>
+        <div class="field">
+          <label class="field__label" for="wcol-key">Key <span class="muted">(optional)</span></label>
+          <input class="input mono" id="wcol-key" name="key" pattern="[a-z0-9_]*">
+        </div>
+        <div class="field">
+          <label class="field__label" for="wcol-dtype">Type</label>
+          <select class="input" id="wcol-dtype" name="dtype">
+            <option value="string">string</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+            <option value="date">date</option>
+          </select>
+        </div>
+        <div class="modal__foot">
+          <button type="button" class="btn" data-action="close">Cancel</button>
+          <button type="submit" class="btn btn--primary">Add column</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script defer src="/static/js/partials/add_column_modal.js"></script>
+<script defer src="/static/js/grid_wishlist.js"></script>
+{% endblock %}

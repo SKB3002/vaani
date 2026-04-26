@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "balances" %}
+{% block title %}Balances · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Balances</h1>
+    <p class="page-head__sub">Track your cash + online balances. Use <strong>Set</strong> to enter exact totals, or <strong>Add</strong> to top up (salary received, cash received, etc.).</p>
+  </div>
+</section>
+
+<div class="grid-1" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--sp-4);">
+  <div class="card">
+    <!-- Mode toggle -->
+    <div class="hstack" style="gap: var(--sp-2); margin-bottom: var(--sp-4);">
+      <button type="button" id="mode-set" class="btn btn--primary btn--sm" data-mode="set">Set balance</button>
+      <button type="button" id="mode-add" class="btn btn--ghost btn--sm" data-mode="add">Add to balance</button>
+    </div>
+
+    <p id="mode-hint" class="muted" style="font-size: var(--fs-sm); margin-bottom: var(--sp-4);">
+      Enter the exact current amount in your wallet and bank.
+    </p>
+
+    <form id="balances-form" class="vstack" style="gap: var(--sp-3);">
+      <input type="hidden" id="balance-mode" value="set">
+
+      <div class="field">
+        <label class="field__label" for="cash">Cash <span id="cash-label-hint">(total in wallet)</span></label>
+        <input class="input input--num" id="cash" name="cash_balance" type="number"
+               step="0.01" inputmode="decimal" placeholder="0" required>
+        <div class="field__hint">Physical wallet cash.</div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="online">Online / Bank <span id="online-label-hint">(total balance)</span></label>
+        <input class="input input--num" id="online" name="online_balance" type="number"
+               step="0.01" inputmode="decimal" placeholder="0" required>
+        <div class="field__hint">Bank + UPI combined.</div>
+      </div>
+
+      <div class="hstack">
+        <button type="submit" class="btn btn--primary" id="submit-btn">Save balance</button>
+        <span class="spacer"></span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">History</h2>
+    {% if balances and balances|length %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>As of</th>
+            <th>Reason</th>
+            <th class="num">Cash</th>
+            <th class="num">Online</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in balances %}
+            <tr>
+              <td class="mono">{{ b.asof }}</td>
+              <td><span class="badge">{{ b.reason }}</span></td>
+              <td class="num">{{ b.cash_display or b.cash_balance }}</td>
+              <td class="num">{{ b.online_display or b.online_balance }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      {{ empty_state(
+        "No balance history yet",
+        "Seed your first cash + online balance in the form on the left.",
+        icon="clock"
+      ) }}
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function () {
+  const form       = document.getElementById("balances-form");
+  const modeInput  = document.getElementById("balance-mode");
+  const modeHint   = document.getElementById("mode-hint");
+  const cashHint   = document.getElementById("cash-label-hint");
+  const onlineHint = document.getElementById("online-label-hint");
+  const submitBtn  = document.getElementById("submit-btn");
+  const btnSet     = document.getElementById("mode-set");
+  const btnAdd     = document.getElementById("mode-add");
+
+  const HINTS = {
+    set: {
+      page: "Enter the exact current amount in your wallet and bank.",
+      cash: "(total in wallet)",
+      online: "(total balance)",
+      submit: "Set balance",
+    },
+    add: {
+      page: "Enter the amount you received — it will be added to your current balance.",
+      cash: "(amount received in cash)",
+      online: "(amount received online / salary)",
+      submit: "Add to balance",
+    },
+  };
+
+  function setMode(mode) {
+    modeInput.value = mode;
+    const h = HINTS[mode];
+    modeHint.textContent   = h.page;
+    cashHint.textContent   = h.cash;
+    onlineHint.textContent = h.online;
+    submitBtn.textContent  = h.submit;
+
+    btnSet.classList.toggle("btn--primary", mode === "set");
+    btnSet.classList.toggle("btn--ghost",   mode !== "set");
+    btnAdd.classList.toggle("btn--primary", mode === "add");
+    btnAdd.classList.toggle("btn--ghost",   mode !== "add");
+  }
+
+  btnSet.addEventListener("click", () => setMode("set"));
+  btnAdd.addEventListener("click", () => setMode("add"));
+
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cashVal   = parseFloat(document.getElementById("cash").value)   || 0;
+    const onlineVal = parseFloat(document.getElementById("online").value) || 0;
+    const mode      = modeInput.value;
+
+    const payload = {
+      cash_balance:   cashVal,
+      online_balance: onlineVal,
+      reason: "manual_adjust",
+      mode,
+    };
+
+    try {
+      const res = await window.FinEye.api("/api/balances", { method: "POST", body: payload });
+      const label = mode === "add" ? "Added to balance" : "Balance saved";
+      window.FinEye.toast({
+        type: "success",
+        title: label,
+        message: `Cash ₹${res.cash_balance.toLocaleString("en-IN")} · Online ₹${res.online_balance.toLocaleString("en-IN")}`,
+      });
+      setTimeout(() => window.location.reload(), 700);
+    } catch (err) {
+      window.FinEye.toast({ type: "danger", title: "Save failed", message: err.message });
+    }
+  });
+})();
+</script>
+
+<style>
+  @media (max-width: 860px) {
+    .main > .grid-1 { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}

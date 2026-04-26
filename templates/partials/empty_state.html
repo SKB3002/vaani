@@ -1,0 +1,24 @@
+{% macro empty_state(title, message="", cta_label=None, cta_href=None, icon="box") -%}
+<div class="empty-state" role="status">
+  <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    {% if icon == "chart" %}
+      <path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>
+    {% elif icon == "grid" %}
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    {% elif icon == "list" %}
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    {% elif icon == "mic" %}
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+    {% elif icon == "clock" %}
+      <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
+    {% else %}
+      <rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 7l3-4h12l3 4"/><line x1="12" y1="11" x2="12" y2="17"/>
+    {% endif %}
+  </svg>
+  <div class="empty-state__title">{{ title }}</div>
+  {% if message %}<p class="empty-state__msg">{{ message }}</p>{% endif %}
+  {% if cta_label and cta_href %}
+    <a class="btn btn--primary" href="{{ cta_href }}" style="border-bottom:none;">{{ cta_label }}</a>
+  {% endif %}
+</div>
+{%- endmacro %}

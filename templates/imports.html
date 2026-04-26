@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% set active_page = "imports" %}
+{% block title %}Import · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Import</h1>
+    <p class="page-head__sub">Upload an existing Excel or CSV. Four steps: upload → map columns → dry-run → commit. Deduped by ULID so re-uploads are safe.</p>
+  </div>
+</section>
+
+<ol class="steps" role="list" aria-label="Import wizard steps">
+  <li class="step" aria-current="step"><span class="step__num">1</span> Upload</li>
+  <li class="step"><span class="step__num">2</span> Map columns</li>
+  <li class="step"><span class="step__num">3</span> Dry-run</li>
+  <li class="step"><span class="step__num">4</span> Commit</li>
+</ol>
+
+<!-- Step 1: Upload -->
+<section class="card" data-wizard-step="1">
+  <h2 class="card__title">1 · Upload file</h2>
+  <p class="muted" style="font-size: var(--fs-sm);">Accepted: <span class="mono">.xlsx</span>, <span class="mono">.xls</span>, <span class="mono">.csv</span> up to 10 MB.</p>
+  <form id="import-upload-form" class="vstack" style="gap: var(--sp-4); margin-top: var(--sp-4);" enctype="multipart/form-data">
+    <div class="field">
+      <label class="field__label" for="import-file">File</label>
+      <input class="input" type="file" id="import-file" name="file" accept=".xlsx,.xls,.csv" required>
+    </div>
+    <div class="field">
+      <label class="field__label" for="import-target">Import into</label>
+      <select class="select" id="import-target" name="target">
+        <option value="expenses">Expenses</option>
+        <option value="investments">Investments</option>
+        <option value="wishlist">Wishlist</option>
+        <option value="goals_a">Goals: Overview</option>
+        <option value="goals_b">Goals: Sources</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field__label" for="import-preset">Preset (skips manual mapping)</label>
+      <select class="select" id="import-preset" name="preset">
+        <option value="">— No preset (map manually) —</option>
+      </select>
+      <div class="field__hint">Presets match specific sheet layouts. Pick one if your sheet matches.</div>
+    </div>
+    <div class="field">
+      <label class="field__label" for="import-date-format">Date format in your file</label>
+      <select class="select" id="import-date-format" name="date_format">
+        <option value="">Auto-detect</option>
+        <option value="%d/%m/%Y">DD/MM/YYYY — e.g. 01/03/2026 (Indian / European)</option>
+        <option value="%m/%d/%Y">MM/DD/YYYY — e.g. 03/01/2026 (US)</option>
+        <option value="%Y-%m-%d">YYYY-MM-DD — e.g. 2026-03-01 (ISO)</option>
+        <option value="%d-%m-%Y">DD-MM-YYYY — e.g. 01-03-2026</option>
+        <option value="%d %b %Y">DD Mon YYYY — e.g. 01 Mar 2026</option>
+        <option value="%d/%m/%y">DD/MM/YY — e.g. 01/03/26</option>
+        <option value="%b %d, %Y">Mon DD, YYYY — e.g. Mar 01, 2026</option>
+      </select>
+      <div class="field__hint">Applies to the Date column. Auto-detect works for most files; pick explicitly if dates are being misread.</div>
+    </div>
+    <div class="field" id="import-sheet-field" hidden>
+      <label class="field__label" for="import-sheet">Sheet</label>
+      <select class="select" id="import-sheet" name="sheet"></select>
+    </div>
+    <div>
+      <button type="submit" class="btn btn--primary">Upload & preview →</button>
+    </div>
+  </form>
+</section>
+
+<!-- Step 2: Column mapping -->
+<section class="card" data-wizard-step="2" hidden>
+  <h2 class="card__title">2 · Map columns</h2>
+  <p class="muted" style="font-size: var(--fs-sm);">We suggest mappings via fuzzy name match. Adjust as needed.</p>
+
+  <div class="grid-1" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--sp-5); margin-top: var(--sp-4);">
+    <div>
+      <h3 style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: var(--sp-2);">Target → Source</h3>
+      <div id="import-mapping"></div>
+    </div>
+    <div>
+      <h3 style="font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: var(--sp-2);">Preview (first 10 rows)</h3>
+      <div id="import-preview" style="overflow-x: auto; max-height: 340px; border: 1px solid var(--border-1); border-radius: var(--r-3);"></div>
+    </div>
+  </div>
+
+  <div class="modal__foot" style="margin-top: var(--sp-5);">
+    <button type="button" class="btn" data-action="import-back">← Back</button>
+    <button type="button" class="btn btn--primary" data-action="import-dryrun">Run dry-run →</button>
+  </div>
+</section>
+
+<!-- Step 3: Dry run -->
+<section class="card" data-wizard-step="3" hidden>
+  <h2 class="card__title">3 · Dry-run validation</h2>
+  <div id="import-dryrun" style="margin-top: var(--sp-4);"></div>
+
+  <form id="import-commit-form" class="vstack" style="gap: var(--sp-3); margin-top: var(--sp-5);">
+    <div class="field">
+      <label class="field__label" for="strategy">On invalid rows</label>
+      <select class="select" id="strategy" name="strategy">
+        <option value="skip">Skip invalid rows</option>
+        <option value="abort">Abort on any invalid</option>
+        <option value="draft">Import invalid as drafts</option>
+      </select>
+    </div>
+    <div class="modal__foot" style="margin-top: 0;">
+      <button type="button" class="btn" data-action="import-back">← Back</button>
+      <button type="submit" class="btn btn--primary">Commit import</button>
+    </div>
+  </form>
+</section>
+
+<!-- Step 4: Done -->
+<section class="card" data-wizard-step="4" hidden>
+  <h2 class="card__title">4 · Done</h2>
+  <p class="muted" style="font-size: var(--fs-sm);">Import committed. Summary below.</p>
+  <pre id="import-summary" class="mono" style="background: var(--surface-2); padding: var(--sp-4); border-radius: var(--r-3); font-size: var(--fs-xs); color: var(--text-2); overflow-x: auto;"></pre>
+  <div class="modal__foot">
+    <button type="button" class="btn" data-action="import-reset">Import another file</button>
+    <a href="/expenses" class="btn btn--primary" style="border-bottom:none;">View data →</a>
+  </div>
+</section>
+
+<script defer src="/static/js/import_wizard.js?v=5"></script>
+
+<style>
+  @media (max-width: 860px) {
+    section[data-wizard-step="2"] > .grid-1 { grid-template-columns: 1fr !important; }
+  }
+</style>
+{% endblock %}

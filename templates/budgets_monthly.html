@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "budgets_monthly" %}
+{% block title %}Budget Table C · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Budget Table C</h1>
+    <p class="page-head__sub">Computed monthly snapshot: budget · actual · remaining · carry · overflow · Medical · Emergency.</p>
+  </div>
+  <div class="hstack" style="gap: var(--sp-2);">
+    <input type="month" id="bc-month" class="input" style="width: 160px;" />
+    <button id="bc-recompute" class="btn btn--ghost">Recompute</button>
+  </div>
+</section>
+
+<div id="bc-warnings" class="card" hidden style="border-left: 3px solid var(--color-danger); margin-bottom: var(--sp-4);">
+  <h3 class="card__title" style="color: var(--color-danger);">Overflow warnings</h3>
+  <ul id="bc-warnings-list" class="muted" style="margin: var(--sp-2) 0 0; padding-left: var(--sp-4);"></ul>
+</div>
+
+<div class="card" id="bc-table-wrap">
+  <table class="table" id="bc-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th class="num">Budget</th>
+        <th class="num">Actual</th>
+        <th class="num">Remaining</th>
+        <th class="num">Carry</th>
+        <th class="num">Overflow</th>
+        <th class="num">→ Medical</th>
+        <th class="num">→ Emergency</th>
+        <th class="num">Med bal</th>
+        <th class="num">Emerg bal</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody id="bc-rows"></tbody>
+  </table>
+  <div id="bc-empty" hidden>
+    {{ empty_state("No Table C rows yet", "Add budget rules and log expenses, then click Recompute.", cta_label="Edit rules", cta_href="/budgets", icon="chart") }}
+  </div>
+</div>
+
+<script src="/static/js/budgets_monthly.js" defer></script>
+{% endblock %}

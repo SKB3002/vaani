@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_page = "charts" %}
+{% block title %}Charts · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Insights</h1>
+    <p class="page-head__sub">Chart grid driven by <span class="mono">data/meta/charts.yaml</span>. Add a YAML entry, the chart appears here — no code change required.</p>
+  </div>
+  <div class="page-head__actions">
+    <button type="button" class="btn btn--ghost" id="charts-refresh-btn" aria-label="Refresh charts">Refresh</button>
+    <a href="/settings#charts" class="btn btn--ghost" style="border-bottom:none;">Edit registry</a>
+  </div>
+</section>
+
+<div id="charts-grid" class="charts-grid" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));">
+  <!-- populated by /static/js/charts.js -->
+</div>
+{% endblock %}
+
+{% block body_end %}
+<script defer src="/static/js/charts.js?v=3"></script>
+{% endblock %}

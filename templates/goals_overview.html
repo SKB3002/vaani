@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "partials/empty_state.html" import empty_state %}
+{% set active_page = "goals_a" %}
+{% block title %}Goals: Overview · FinEye{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Goals — overview</h1>
+    <p class="page-head__sub">Table A: high-level snapshot. Sibling page <a href="/goals/sources">Sources</a> shows the split of manual vs auto-added contributions.</p>
+  </div>
+</section>
+
+{% if goals and goals|length %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Goal</th>
+        <th class="num">Target</th>
+        <th class="num">Current</th>
+        <th class="num">Monthly</th>
+        <th class="num">% complete</th>
+        <th class="num">Months left</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in goals %}
+        <tr>
+          <td>{{ g.goal_name }}</td>
+          <td class="num">{{ g.target_display or g.target_amount }}</td>
+          <td class="num">{{ g.current_display or g.current_amount }}</td>
+          <td class="num">{{ g.monthly_display or g.monthly_contribution }}</td>
+          <td class="num">{{ g.pct_complete|round(1) }}%</td>
+          <td class="num">{{ g.months_left }}</td>
+          <td>
+            <span class="badge badge--{{ 'success' if g.status == 'on_track' else 'warn' }}">{{ g.status or '—' }}</span>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+  {{ empty_state("No goals defined yet", "Goals appear here once you add them via the API or import.", icon="chart") }}
+{% endif %}
+<script src="/static/js/goals.js" defer></script>
+{% endblock %}
