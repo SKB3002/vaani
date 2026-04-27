@@ -409,6 +409,10 @@
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  // Expose submitTranscript so the text-input fallback can call it
+  window.Vaani = window.Vaani || {};
+  window.Vaani.submitTranscript = submitTranscript;
+
   document.addEventListener("DOMContentLoaded", () => {
     const buttons = document.querySelectorAll(".btn--voice, [data-voice-ptt]");
     buttons.forEach((btn) => {

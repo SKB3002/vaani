@@ -1,17 +1,154 @@
-﻿<button
-  type="button"
-  class="btn btn--voice"
-  data-state="idle"
-  data-voice-ptt
-  aria-label="Push to talk — hold to record an expense"
-  title="Hold to record an expense"
->
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-    <path d="M12 19v4"/>
-    <path d="M8 23h8"/>
-  </svg>
-  <span class="visually-hidden">Hold to record</span>
-</button>
+<div class="voice-capture" id="voice-capture-bar">
+  <!-- Mic button -->
+  <button
+    type="button"
+    class="btn btn--voice"
+    data-state="idle"
+    data-voice-ptt
+    aria-label="Push to talk — hold to record an expense"
+    title="Hold to record"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <path d="M12 19v4"/>
+      <path d="M8 23h8"/>
+    </svg>
+    <span class="visually-hidden">Hold to record</span>
+  </button>
+
+  <!-- Keyboard toggle -->
+  <button
+    type="button"
+    class="btn btn--ghost btn--icon voice-capture__kbd-toggle"
+    id="voice-kbd-toggle"
+    aria-label="Type instead"
+    title="Type instead"
+    aria-expanded="false"
+    aria-controls="voice-text-box"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>
+    </svg>
+  </button>
+
+  <!-- Hidden text input — slides in when toggle is pressed -->
+  <div class="voice-capture__text-wrap" id="voice-text-box" aria-hidden="true">
+    <input
+      type="text"
+      class="input voice-capture__text-input"
+      id="voice-text-input"
+      placeholder="e.g. spent 250 at Zomato on UPI"
+      autocomplete="off"
+      aria-label="Type an expense"
+      tabindex="-1"
+    >
+    <button
+      type="button"
+      class="btn btn--primary btn--sm voice-capture__text-send"
+      id="voice-text-send"
+      aria-label="Send"
+      tabindex="-1"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
 <span id="voice-transcript" aria-live="polite" class="voice-transcript" data-voice-transcript></span>
+
+<style>
+.voice-capture {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1, 4px);
+  position: relative;
+}
+
+.voice-capture__kbd-toggle {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.voice-capture__kbd-toggle:hover,
+.voice-capture__kbd-toggle[aria-expanded="true"] {
+  opacity: 1;
+}
+.voice-capture__kbd-toggle[aria-expanded="true"] {
+  color: var(--accent, #38bdf8);
+}
+
+/* Slide-in text box */
+.voice-capture__text-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1, 4px);
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width 0.25s ease, opacity 0.2s ease;
+  pointer-events: none;
+}
+.voice-capture__text-wrap.is-open {
+  max-width: 280px;
+  opacity: 1;
+  pointer-events: auto;
+}
+.voice-capture__text-input {
+  width: 200px;
+  font-size: var(--fs-sm, 0.85rem);
+  padding: 0.35rem 0.6rem;
+  height: 32px;
+}
+</style>
+
+<script>
+(function () {
+  const toggle  = document.getElementById("voice-kbd-toggle");
+  const box     = document.getElementById("voice-text-box");
+  const input   = document.getElementById("voice-text-input");
+  const sendBtn = document.getElementById("voice-text-send");
+  if (!toggle || !box || !input) return;
+
+  function openBox() {
+    box.classList.add("is-open");
+    box.setAttribute("aria-hidden", "false");
+    toggle.setAttribute("aria-expanded", "true");
+    input.setAttribute("tabindex", "0");
+    sendBtn.setAttribute("tabindex", "0");
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closeBox() {
+    box.classList.remove("is-open");
+    box.setAttribute("aria-hidden", "true");
+    toggle.setAttribute("aria-expanded", "false");
+    input.setAttribute("tabindex", "-1");
+    sendBtn.setAttribute("tabindex", "-1");
+    input.value = "";
+  }
+
+  toggle.addEventListener("click", () => {
+    box.classList.contains("is-open") ? closeBox() : openBox();
+  });
+
+  function submit() {
+    const text = input.value.trim();
+    if (!text) return;
+    // voice.js exposes window.Vaani.submitTranscript
+    if (window.Vaani && window.Vaani.submitTranscript) {
+      window.Vaani.submitTranscript(text);
+      closeBox();
+    }
+  }
+
+  sendBtn.addEventListener("click", submit);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); submit(); }
+    if (e.key === "Escape") closeBox();
+  });
+})();
+</script>
