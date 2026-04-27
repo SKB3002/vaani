@@ -1,1 +1,1 @@
-﻿"""Storage layer: CSV schemas, atomic writes, WAL."""
+"""Storage layer: CSV schemas, atomic writes, WAL."""

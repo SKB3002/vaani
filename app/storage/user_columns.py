@@ -1,4 +1,4 @@
-﻿"""User-defined column registry — one JSON file per table.
+"""User-defined column registry — one JSON file per table.
 
 Generalises the investments-only column registry to every CSV table.
 Registry file: ``data/meta/user_columns/{table}.json``.

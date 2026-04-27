@@ -1,1 +1,1 @@
-﻿"""Pydantic models (API request/response + domain)."""
+"""Pydantic models (API request/response + domain)."""

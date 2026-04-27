@@ -1,4 +1,4 @@
-﻿"""Fuzzy source-column → target-column mapping using rapidfuzz."""
+"""Fuzzy source-column → target-column mapping using rapidfuzz."""
 from __future__ import annotations
 
 from rapidfuzz import fuzz, process

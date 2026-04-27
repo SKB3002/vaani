@@ -1,4 +1,4 @@
-﻿"""Investments — monthly planning grid with upsert-by-month semantics.
+"""Investments — monthly planning grid with upsert-by-month semantics.
 
 Per §4.3: `investments.csv` is a monthly aggregate table, not a transaction
 ledger. One row per `YYYY-MM`. `total` is computed as the sum of all numeric

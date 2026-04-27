@@ -1,4 +1,4 @@
-﻿"""Supabase/Postgres dual-write observer for LedgerWriter.
+"""Supabase/Postgres dual-write observer for LedgerWriter.
 
 Receives ChangeEvent dicts from LedgerWriter._notify and upserts/deletes
 rows in the corresponding Postgres table.  Failures are logged but never

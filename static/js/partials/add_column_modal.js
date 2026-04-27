@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    Vaani — add_column_modal.js
    Reusable "+ Add Column" modal usable from any grid that wants to let
    the user extend a CSV with a new user-defined column.

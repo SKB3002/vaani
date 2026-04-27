@@ -1,4 +1,4 @@
-﻿"""FastAPI application factory + lifespan."""
+"""FastAPI application factory + lifespan."""
 from __future__ import annotations
 
 import logging

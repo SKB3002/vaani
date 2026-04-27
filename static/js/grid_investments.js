@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    Vaani — grid_investments.js
    Monthly investments grid. Upsert-by-month semantics against
    /api/investments. Columns are driven by the universal user-column

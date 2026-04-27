@@ -1,4 +1,4 @@
-﻿"""Pydantic models for goals (Tables A and B)."""
+"""Pydantic models for goals (Tables A and B)."""
 from __future__ import annotations
 
 from typing import Literal

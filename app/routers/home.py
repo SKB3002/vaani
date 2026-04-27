@@ -1,4 +1,4 @@
-﻿"""Home page — renders the dashboard overview with live KPIs."""
+"""Home page — renders the dashboard overview with live KPIs."""
 from __future__ import annotations
 
 from datetime import datetime

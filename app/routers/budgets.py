@@ -1,4 +1,4 @@
-﻿"""Budget rules, caps, and Table C endpoints."""
+"""Budget rules, caps, and Table C endpoints."""
 from __future__ import annotations
 
 import json

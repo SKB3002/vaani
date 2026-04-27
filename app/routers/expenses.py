@@ -1,4 +1,4 @@
-﻿"""Expense CRUD endpoints."""
+"""Expense CRUD endpoints."""
 from __future__ import annotations
 
 from datetime import date

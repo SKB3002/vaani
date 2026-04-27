@@ -1,4 +1,4 @@
-﻿"""Timezone service (§4.10a).
+"""Timezone service (§4.10a).
 
 Reads `meta.json.timezone` with a small in-process TTL cache so every request
 doesn't re-read the file, but a SettingsPatch is visible within a few seconds.

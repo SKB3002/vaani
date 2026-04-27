@@ -1,4 +1,4 @@
-﻿"""Sheets backup lifecycle: install / reload (hot) / teardown.
+"""Sheets backup lifecycle: install / reload (hot) / teardown.
 
 Keeps all Sheets-specific wiring out of `app.main` and makes the integration
 reloadable at runtime when the UI flips config via `PATCH /api/sheets/config`.

@@ -1,4 +1,4 @@
-﻿// Google Sheets backup — Settings panel wiring (v4, UI-driven setup).
+// Google Sheets backup — Settings panel wiring (v4, UI-driven setup).
 (function () {
   const panel = document.getElementById("sheets-panel");
   if (!panel) return;

@@ -1,4 +1,4 @@
-﻿"""Aggregated reports (daily / monthly totals)."""
+"""Aggregated reports (daily / monthly totals)."""
 from __future__ import annotations
 
 from datetime import date

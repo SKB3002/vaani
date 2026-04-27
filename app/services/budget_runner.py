@@ -1,4 +1,4 @@
-﻿"""Budget runner — orchestrates loading CSVs, iterating months, and writing Table C.
+"""Budget runner — orchestrates loading CSVs, iterating months, and writing Table C.
 
 The overflow engine (`overflow.compute_month`) is pure. All I/O lives here.
 """

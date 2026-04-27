@@ -1,4 +1,4 @@
-﻿"""Google Sheets backup endpoints (M6).
+"""Google Sheets backup endpoints (M6).
 
 Safety: every endpoint is a no-op / 503 when GOOGLE_SHEETS_ENABLED is false
 or credentials are missing. Local writes are never blocked.

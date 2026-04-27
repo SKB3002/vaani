@@ -1,4 +1,4 @@
-﻿"""Runtime integrations config (`data/meta/integrations.json`).
+"""Runtime integrations config (`data/meta/integrations.json`).
 
 Authoritative at runtime for the Sheets setup UI. `.env` / settings remain
 first-boot defaults; any UI-driven edit goes here and overrides the env.

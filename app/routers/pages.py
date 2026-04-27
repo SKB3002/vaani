@@ -1,4 +1,4 @@
-﻿"""HTML page routes for FinEye dashboard.
+"""HTML page routes for FinEye dashboard.
 
 The `/` route is owned by `home.py`. This module adds the remaining
 M0/M1 pages so users can navigate the full shell even when only a

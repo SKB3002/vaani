@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    Vaani — grid_expenses.js
    Handsontable grid for /expenses. Chip dropdown editors, inline add,
    POST/PATCH to /api/expenses.

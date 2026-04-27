@@ -1,4 +1,4 @@
-﻿"""Simple password-gate middleware for Vercel deployment.
+"""Simple password-gate middleware for Vercel deployment.
 
 When FINEYE_APP_PASSWORD is set:
   - /login  (GET/POST) is always public — serves the login form / processes it.

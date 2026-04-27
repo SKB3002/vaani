@@ -1,4 +1,4 @@
-﻿"""LedgerWriter — WAL + atomic CSV writes with per-file locks.
+"""LedgerWriter — WAL + atomic CSV writes with per-file locks.
 
 All mutations to any FinEye CSV go through this class so we get:
 - Crash recovery via WAL replay on startup.

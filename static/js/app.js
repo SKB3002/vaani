@@ -1,4 +1,4 @@
-﻿/* =====================================================================
+/* =====================================================================
    Vaani — app.js
    Theme toggle, toast dispatcher, fetch helper, Indian currency format.
    Loaded on every page via base.html.

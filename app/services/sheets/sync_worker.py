@@ -1,4 +1,4 @@
-﻿"""Async sync worker for Google Sheets.
+"""Async sync worker for Google Sheets.
 
 Guarantees:
 - Local CSV write never blocks on the queue. `enqueue_*` is sync and fast.

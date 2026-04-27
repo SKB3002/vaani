@@ -1,4 +1,4 @@
-﻿"""First-run bootstrap: ensure directory layout + empty CSVs with headers + meta files."""
+"""First-run bootstrap: ensure directory layout + empty CSVs with headers + meta files."""
 from __future__ import annotations
 
 import json

@@ -1,4 +1,4 @@
-﻿"""Voice / LLM-assisted expense parse endpoints."""
+"""Voice / LLM-assisted expense parse endpoints."""
 from __future__ import annotations
 
 import json

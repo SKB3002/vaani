@@ -1,4 +1,4 @@
-﻿"""Pure-function pandas aggregator: ChartSpec + DataFrame -> Chart.js-ready payload."""
+"""Pure-function pandas aggregator: ChartSpec + DataFrame -> Chart.js-ready payload."""
 from __future__ import annotations
 
 from collections.abc import Callable

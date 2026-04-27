@@ -1,4 +1,4 @@
-﻿"""Import-wizard models (§4.10b)."""
+"""Import-wizard models (§4.10b)."""
 from __future__ import annotations
 
 from typing import Any, Literal

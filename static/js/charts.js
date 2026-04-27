@@ -1,4 +1,4 @@
-﻿// M5 — rule-driven chart renderer. Reads registry + payloads from /api/charts.
+// M5 — rule-driven chart renderer. Reads registry + payloads from /api/charts.
 // Zero chart-specific code: Chart.js config built from server-returned ChartPayload.
 (function () {
   "use strict";

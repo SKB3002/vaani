@@ -1,4 +1,4 @@
-﻿"""Thin gspread wrapper — only used when GOOGLE_SHEETS_ENABLED.
+"""Thin gspread wrapper — only used when GOOGLE_SHEETS_ENABLED.
 
 Imports gspread lazily so the rest of the app works even when the lib is
 missing or creds are not configured.

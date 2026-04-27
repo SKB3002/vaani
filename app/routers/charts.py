@@ -1,4 +1,4 @@
-﻿"""Charts API — registry listing + single-chart payload + cache refresh.
+"""Charts API — registry listing + single-chart payload + cache refresh.
 
 Charts are declared in `data/meta/charts.yaml`. Adding a chart = one YAML entry.
 """

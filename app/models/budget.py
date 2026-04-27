@@ -1,4 +1,4 @@
-﻿"""Pydantic models for the budget overflow engine."""
+"""Pydantic models for the budget overflow engine."""
 from __future__ import annotations
 
 from typing import Any

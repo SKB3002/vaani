@@ -1,4 +1,4 @@
-﻿"""Settings models (reflects meta.json)."""
+"""Settings models (reflects meta.json)."""
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, field_validator

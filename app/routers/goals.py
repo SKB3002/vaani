@@ -1,4 +1,4 @@
-﻿"""Goals A (overview) + Goals B (source breakdown) CRUD + contribute."""
+"""Goals A (overview) + Goals B (source breakdown) CRUD + contribute."""
 from __future__ import annotations
 
 from typing import Any

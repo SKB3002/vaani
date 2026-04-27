@@ -1,4 +1,4 @@
-﻿"""Write-Ahead Log for crash-safe CSV mutations."""
+"""Write-Ahead Log for crash-safe CSV mutations."""
 from __future__ import annotations
 
 import json
