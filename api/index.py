@@ -1,19 +1,14 @@
 """Vercel serverless entry point."""
-import sys
 import traceback
 
 try:
-    from app.main import app  # noqa: F401
+    from app.main import app
 except Exception:
-    # Re-expose a minimal ASGI app that returns the traceback so we can debug.
     _tb = traceback.format_exc()
+    from fastapi import FastAPI
+    app = FastAPI()
 
-    async def app(scope, receive, send):  # type: ignore[misc]
-        if scope["type"] == "http":
-            body = f"Startup error:\n{_tb}".encode()
-            await send({
-                "type": "http.response.start",
-                "status": 500,
-                "headers": [(b"content-type", b"text/plain"), (b"content-length", str(len(body)).encode())],
-            })
-            await send({"type": "http.response.body", "body": body})
+    @app.get("/{path:path}")
+    async def _startup_error(path: str = ""):
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(f"Startup error:\n{_tb}", status_code=500)
