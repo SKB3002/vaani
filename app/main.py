@@ -66,17 +66,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         except Exception as e:  # pragma: no cover - defensive
             logger.warning("Budget recompute at startup failed: %s", e)
 
-    if not supabase_mode:
-        # Auto-recompute Table C whenever an expense is written / updated / deleted.
-        def _recompute_on_expense_change(event: dict[str, object]) -> None:
-            if event.get("table") != "expenses":
-                return
-            try:
-                get_budget_runner().recompute_all()
-            except Exception:  # pragma: no cover - observer must never raise
-                logger.exception("Budget auto-recompute on expense change failed")
+    # Auto-recompute Table C whenever an expense is written / updated / deleted.
+    def _recompute_on_expense_change(event: dict[str, object]) -> None:
+        if event.get("table") != "expenses":
+            return
+        try:
+            get_budget_runner().recompute_all()
+        except Exception:  # pragma: no cover - observer must never raise
+            logger.exception("Budget auto-recompute on expense change failed")
 
-        ledger.on_change(_recompute_on_expense_change)
+    ledger.on_change(_recompute_on_expense_change)
 
     # Supabase dual-write observer — only needed in csv mode (supabase mode writes direct)
     if cfg.supabase_configured and not supabase_mode:

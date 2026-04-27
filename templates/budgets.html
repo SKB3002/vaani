@@ -66,24 +66,6 @@
   </div>
 </div>
 
-<script>
-(function () {
-  const form = document.getElementById("caps-form");
-  if (!form) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const payload = {};
-    new FormData(form).forEach((v, k) => payload[k] = Number(v));
-    try {
-      await window.Vaani.api("/api/budgets/caps", { method: "PUT", body: payload });
-      window.Vaani.toast({ type: "success", message: "Caps updated" });
-    } catch (err) {
-      window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
-    }
-  });
-})();
-</script>
-
 <style>@media (max-width: 860px) { .main > .grid-1 { grid-template-columns: 1fr !important; } }</style>
 <script src="/static/js/budgets.js" defer></script>
 {% endblock %}

@@ -30,6 +30,9 @@ def _load_meta() -> dict[str, Any]:
 
 
 def _save_meta(data: dict[str, Any]) -> None:
+    from app.config import get_settings
+    if get_settings().STORAGE_BACKEND == "supabase":
+        return  # read-only filesystem on Vercel; caps not persisted in supabase mode
     path = _meta_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")

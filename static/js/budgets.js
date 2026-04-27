@@ -18,7 +18,8 @@
           <td class="num mono">${Number(r.monthly_budget || 0).toFixed(2)}</td>
           <td class="num mono">${Number(r.carry_cap || 0).toFixed(2)}</td>
           <td class="num mono">${r.priority ?? 100}</td>
-          <td class="right">
+          <td class="right" style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
+            <button class="btn btn--ghost btn--sm" data-edit="${escapeHtml(r.category)}">Edit</button>
             <button class="btn btn--ghost btn--sm" data-del="${escapeHtml(r.category)}">Delete</button>
           </td>
         `;
@@ -26,6 +27,9 @@
       }
       tbody.querySelectorAll("[data-del]").forEach((btn) => {
         btn.addEventListener("click", () => deleteRule(btn.dataset.del));
+      });
+      tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.addEventListener("click", () => editRule(btn.dataset.edit));
       });
     } catch (e) {
       toast({ type: "danger", title: "Refresh failed", message: e.message });
@@ -40,6 +44,32 @@
       refreshRules();
     } catch (e) {
       toast({ type: "danger", title: "Delete failed", message: e.message });
+    }
+  }
+
+  async function editRule(category) {
+    const rules = await api("/api/budgets/rules");
+    const existing = rules.find((r) => r.category === category);
+    if (!existing) return;
+    const mb = prompt(`Monthly budget for "${category}":`, existing.monthly_budget ?? 0);
+    if (mb === null) return;
+    const cc = prompt(`Carry cap for "${category}":`, existing.carry_cap ?? 0);
+    if (cc === null) return;
+    const pr = prompt(`Priority for "${category}":`, existing.priority ?? 100);
+    if (pr === null) return;
+    try {
+      await api(`/api/budgets/rules/${encodeURIComponent(category)}`, {
+        method: "PATCH",
+        body: {
+          monthly_budget: Number(mb),
+          carry_cap: Number(cc),
+          priority: Number(pr),
+        },
+      });
+      toast({ type: "success", message: "Rule updated" });
+      refreshRules();
+    } catch (e) {
+      toast({ type: "danger", title: "Update failed", message: e.message });
     }
   }
 
@@ -72,20 +102,23 @@
     ));
   }
 
-  // Caps form: switch PUT → PATCH (router uses PATCH).
   const capsForm = document.getElementById("caps-form");
   if (capsForm) {
     capsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {};
       new FormData(capsForm).forEach((v, k) => (payload[k] = Number(v)));
+      const btn = capsForm.querySelector("[type=submit]");
+      if (btn) btn.disabled = true;
       try {
         await api("/api/budgets/caps", { method: "PATCH", body: payload });
         toast({ type: "success", message: "Caps saved" });
       } catch (err) {
         toast({ type: "danger", title: "Save failed", message: err.message });
+      } finally {
+        if (btn) btn.disabled = false;
       }
-    }, true);
+    });
   }
 
   // Add rule button (injected if not present in template)

@@ -151,25 +151,39 @@ class BudgetRunner:
         )
 
     def _write_table_c(self, rows: list[OverflowRow]) -> None:
-        """Replace-all write of budget_table_c.csv (atomic)."""
+        """Replace-all write of budget_table_c — via ledger so supabase mode works."""
+        from app.config import get_settings
+        supabase_mode = get_settings().STORAGE_BACKEND == "supabase"
+
         schema = SCHEMAS["budget_table_c"]
-        path = Path(table_path(str(self.data_dir), "budget_table_c"))
-        if rows:
-            records = [r.model_dump() for r in rows]
-            df = pd.DataFrame(records, columns=schema["columns"])
+        records = [r.model_dump() for r in rows] if rows else []
+
+        if supabase_mode:
+            from app.storage.supabase_store import _delete_where, _upsert
+            from app.config import get_settings as _gs
+            uid = _gs().OWNER_ID
+            # Wipe all existing rows for this owner then re-insert
+            _delete_where("budget_table_c", "user_id", uid)
+            for rec in records:
+                _upsert("budget_table_c", rec)
         else:
-            df = pd.DataFrame({col: [] for col in schema["columns"]})
-        with file_lock(path):
-            atomic_write_csv(df, path)
+            df = pd.DataFrame(records, columns=schema["columns"]) if records else pd.DataFrame({col: [] for col in schema["columns"]})
+            path = Path(table_path(str(self.data_dir), "budget_table_c"))
+            with file_lock(path):
+                atomic_write_csv(df, path)
 
     # ---------- reads ----------
     def read_table_c(self, month: str | None = None) -> list[dict[str, Any]]:
-        path = Path(table_path(str(self.data_dir), "budget_table_c"))
-        df = read_csv_typed(path, SCHEMAS["budget_table_c"])
+        from app.config import get_settings
+        if get_settings().STORAGE_BACKEND == "supabase":
+            from app.storage.supabase_store import read_table
+            df = read_table("budget_table_c")
+        else:
+            path = Path(table_path(str(self.data_dir), "budget_table_c"))
+            df = read_csv_typed(path, SCHEMAS["budget_table_c"])
         if df.empty:
             return []
         if month is None:
-            # latest month present
             months = sorted(df["month"].dropna().astype("string").unique().tolist())
             if not months:
                 return []
