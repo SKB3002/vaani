@@ -139,6 +139,66 @@ def _delete_where(table: str, column: str, value: Any) -> None:
         log.exception("supabase delete_where failed for table=%s col=%s", table, column)
 
 
+def read_table(table: str) -> "pd.DataFrame":
+    """Read all rows for the current owner from Supabase, returned as a DataFrame.
+
+    Used by LedgerWriter.read() when STORAGE_BACKEND=supabase (Vercel).
+    Drops the user_id column before returning so callers see the same
+    schema as the CSV path.
+    """
+    import pandas as pd
+    from app.storage.schemas import SCHEMAS
+
+    cfg = get_settings()
+    schema = SCHEMAS[table]
+
+    if not cfg.supabase_configured:
+        return _empty_frame(schema)
+
+    # Build column list excluding user_id (not in CSV schema)
+    cols = schema["columns"]
+    col_list = ", ".join(cols)
+
+    # Sort by PK for stable ordering; expenses sorted by date DESC
+    order = "date DESC, created_at DESC" if table == "expenses" else schema["pk"]
+    sql = (
+        f"SELECT {col_list} FROM {table} "
+        f"WHERE user_id = %s ORDER BY {order}"
+    )
+
+    try:
+        conn = _get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, [cfg.OWNER_ID])
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        if not rows:
+            return _empty_frame(schema)
+
+        df = pd.DataFrame(rows, columns=cols)
+        # Cast to schema dtypes best-effort
+        for col, dtype in schema["dtypes"].items():
+            if col in df.columns:
+                try:
+                    df[col] = df[col].astype(dtype)
+                except (ValueError, TypeError):
+                    pass
+        return df
+
+    except Exception:
+        log.exception("supabase read_table failed for table=%s", table)
+        return _empty_frame(schema)
+
+
+def _empty_frame(schema: "Any") -> "pd.DataFrame":
+    import pandas as pd
+    data = {col: pd.array([], dtype=schema["dtypes"][col]) for col in schema["columns"]}
+    return pd.DataFrame(data)
+
+
 def supabase_observer(event: dict[str, Any]) -> None:
     """LedgerWriter post-commit observer — mirrors every CSV mutation to Supabase."""
     op: str = event.get("op", "")

@@ -140,6 +140,10 @@ class LedgerWriter:
 
     def read(self, table: str) -> pd.DataFrame:
         self._check_table(table)
+        from app.config import get_settings
+        if get_settings().STORAGE_BACKEND == "supabase":
+            from app.storage.supabase_store import read_table
+            return read_table(table)
         return read_csv_typed(self._path(table), SCHEMAS[table])
 
     def add_column(self, table: str, key: str, default: Any = None) -> None:
