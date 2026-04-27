@@ -43,36 +43,43 @@ logger = logging.getLogger("fineye")
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cfg = get_settings()
     logging.basicConfig(level=cfg.log_level)
-    logger.info("Vaani starting up")
-    bootstrap()
+    logger.info("Vaani starting up (storage=%s)", cfg.STORAGE_BACKEND)
+
+    supabase_mode = cfg.STORAGE_BACKEND == "supabase"
+
+    if not supabase_mode:
+        bootstrap()
+
     ledger = get_ledger()
-    replayed = ledger.replay()
-    if replayed:
-        logger.info("WAL replay applied %d pending entries", replayed)
-    try:
-        summary = get_budget_runner().recompute_all()
-        logger.info(
-            "Budget recompute: %d months, %d warnings",
-            summary.months_computed,
-            len(summary.warnings),
-        )
-    except Exception as e:  # pragma: no cover - defensive
-        logger.warning("Budget recompute at startup failed: %s", e)
 
-    # Auto-recompute Table C whenever an expense is written / updated / deleted.
-    # Recompute is a cheap pure-function pass over pandas — safe for single-user.
-    def _recompute_on_expense_change(event: dict[str, object]) -> None:
-        if event.get("table") != "expenses":
-            return
+    if not supabase_mode:
+        replayed = ledger.replay()
+        if replayed:
+            logger.info("WAL replay applied %d pending entries", replayed)
         try:
-            get_budget_runner().recompute_all()
-        except Exception:  # pragma: no cover - observer must never raise
-            logger.exception("Budget auto-recompute on expense change failed")
+            summary = get_budget_runner().recompute_all()
+            logger.info(
+                "Budget recompute: %d months, %d warnings",
+                summary.months_computed,
+                len(summary.warnings),
+            )
+        except Exception as e:  # pragma: no cover - defensive
+            logger.warning("Budget recompute at startup failed: %s", e)
 
-    ledger.on_change(_recompute_on_expense_change)
+    if not supabase_mode:
+        # Auto-recompute Table C whenever an expense is written / updated / deleted.
+        def _recompute_on_expense_change(event: dict[str, object]) -> None:
+            if event.get("table") != "expenses":
+                return
+            try:
+                get_budget_runner().recompute_all()
+            except Exception:  # pragma: no cover - observer must never raise
+                logger.exception("Budget auto-recompute on expense change failed")
 
-    # Supabase dual-write observer — best-effort, never blocks CSV path
-    if cfg.supabase_configured:
+        ledger.on_change(_recompute_on_expense_change)
+
+    # Supabase dual-write observer — only needed in csv mode (supabase mode writes direct)
+    if cfg.supabase_configured and not supabase_mode:
         ledger.on_change(supabase_observer)
         logger.info("Supabase dual-write observer registered")
 

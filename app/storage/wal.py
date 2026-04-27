@@ -57,9 +57,10 @@ class WriteAheadLog:
     idempotent because entry_ids persist in .wal_applied.jsonl.
     """
 
-    def __init__(self, wal_dir: str | Path) -> None:
+    def __init__(self, wal_dir: str | Path, *, create_dirs: bool = True) -> None:
         self.wal_dir = Path(wal_dir)
-        self.wal_dir.mkdir(parents=True, exist_ok=True)
+        if create_dirs:
+            self.wal_dir.mkdir(parents=True, exist_ok=True)
         self.log_path = self.wal_dir / "wal.jsonl"
         self.applied_path = self.wal_dir / "wal_applied.jsonl"
         self._lock = threading.Lock()

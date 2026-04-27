@@ -28,8 +28,10 @@ ChangeCallback = Callable[[ChangeEvent], None]
 
 class LedgerWriter:
     def __init__(self, data_dir: str | Path, wal_dir: str | Path) -> None:
+        from app.config import get_settings
+        self._supabase_mode = get_settings().STORAGE_BACKEND == "supabase"
         self.data_dir = Path(data_dir)
-        self.wal = WriteAheadLog(wal_dir)
+        self.wal = WriteAheadLog(wal_dir, create_dirs=not self._supabase_mode)
         self._observers: list[ChangeCallback] = []
 
     # ---------- observer registration ----------
@@ -65,10 +67,14 @@ class LedgerWriter:
     def append(self, table: str, row: dict[str, Any]) -> dict[str, Any]:
         """Append a row to a table. Returns the row actually written."""
         self._check_table(table)
-        entry = self.wal.append(table, "append", row)
-        self._apply_append(table, row)
-        self.wal.clear(entry.entry_id)
         pk = SCHEMAS[table]["pk"]
+        if self._supabase_mode:
+            from app.storage.supabase_store import _upsert
+            _upsert(table, row)
+        else:
+            entry = self.wal.append(table, "append", row)
+            self._apply_append(table, row)
+            self.wal.clear(entry.entry_id)
         self._notify(
             {
                 "table": table,
@@ -83,9 +89,15 @@ class LedgerWriter:
     def update(self, table: str, pk_value: str, updates: dict[str, Any]) -> dict[str, Any] | None:
         """Patch one row identified by the table's PK. Returns updated row or None."""
         self._check_table(table)
-        entry = self.wal.append(table, "update", {"pk_value": pk_value, "updates": updates})
-        updated = self._apply_update(table, pk_value, updates)
-        self.wal.clear(entry.entry_id)
+        if self._supabase_mode:
+            from app.storage.supabase_store import _upsert
+            merged = {SCHEMAS[table]["pk"]: pk_value, **updates}
+            _upsert(table, merged)
+            updated: dict[str, Any] | None = merged
+        else:
+            entry = self.wal.append(table, "update", {"pk_value": pk_value, "updates": updates})
+            updated = self._apply_update(table, pk_value, updates)
+            self.wal.clear(entry.entry_id)
         if updated is not None:
             self._notify(
                 {
@@ -101,9 +113,14 @@ class LedgerWriter:
     def delete(self, table: str, pk_value: str) -> bool:
         """Delete a row by PK. Returns True if a row was removed."""
         self._check_table(table)
-        entry = self.wal.append(table, "delete", {"pk_value": pk_value})
-        removed = self._apply_delete(table, pk_value)
-        self.wal.clear(entry.entry_id)
+        if self._supabase_mode:
+            from app.storage.supabase_store import _delete_by_pk
+            _delete_by_pk(table, SCHEMAS[table]["pk"], pk_value)
+            removed = True
+        else:
+            entry = self.wal.append(table, "delete", {"pk_value": pk_value})
+            removed = self._apply_delete(table, pk_value)
+            self.wal.clear(entry.entry_id)
         if removed:
             self._notify(
                 {
@@ -119,11 +136,16 @@ class LedgerWriter:
     def delete_where(self, table: str, column: str, value: Any) -> int:
         """Delete all rows where column == value. Returns count removed."""
         self._check_table(table)
-        entry = self.wal.append(
-            table, "delete_where", {"column": column, "value": value}
-        )
-        count = self._apply_delete_where(table, column, value)
-        self.wal.clear(entry.entry_id)
+        if self._supabase_mode:
+            from app.storage.supabase_store import _delete_where
+            _delete_where(table, column, value)
+            count = 1  # best-effort; actual count unknown without a SELECT
+        else:
+            entry = self.wal.append(
+                table, "delete_where", {"column": column, "value": value}
+            )
+            count = self._apply_delete_where(table, column, value)
+            self.wal.clear(entry.entry_id)
         if count > 0:
             self._notify(
                 {
@@ -164,6 +186,8 @@ class LedgerWriter:
 
     def replay(self) -> int:
         """Replay any WAL entries that were written but never cleared."""
+        if self._supabase_mode:
+            return 0
         return self.wal.replay_unfinished(self._handle_replay)
 
     # ---------- internals ----------
