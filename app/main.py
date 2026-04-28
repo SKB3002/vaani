@@ -48,7 +48,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     supabase_mode = cfg.STORAGE_BACKEND == "supabase"
 
     if not supabase_mode:
-        bootstrap()
+        try:
+            bootstrap()
+        except OSError as e:
+            import errno
+            if e.errno == errno.EROFS:
+                logger.warning(
+                    "Read-only filesystem detected; switching to supabase mode. "
+                    "Set FINEYE_STORAGE_BACKEND=supabase in Vercel env vars to suppress this."
+                )
+                supabase_mode = True
+            else:
+                raise
 
     ledger = get_ledger()
 
