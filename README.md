@@ -4,7 +4,6 @@
 
 Vaani is an open-source, self-hostable personal finance tracker with **voice-driven expense capture**, **AI categorization**, and a **bring-your-own-keys** architecture. Talk to it like a friend — *"spent 250 on chai with Rohan, he'll pay me back"* — and watch it transcribe, categorize, split, and sync everything to your own cloud.
 
-🔗 **Live demo:** [vaani-kaapi.vercel.app](https://vaani-kaapi.vercel.app)
 🌟 **Star this repo** if you believe personal financial data shouldn't live on someone else's servers.
 
 ---
