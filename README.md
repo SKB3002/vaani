@@ -75,6 +75,11 @@ Just speak naturally. Groq's LPU transcribes (Whisper) and LLaMA 3.3 categorizes
 | Hosting | Vercel serverless / Self-hosted Docker |
 | Backup | Google Sheets API |
 
+> ⚠️ **Handsontable license note:** the grid uses [Handsontable](https://handsontable.com)
+> under its non-commercial / evaluation license. Vaani's own code is MIT, but commercial
+> forks will need a Handsontable commercial license. A freemium tier for projects like
+> this is reportedly on the way — until then, keep deployments personal / non-commercial.
+
 ---
 
 ## 🏃 Quick Start (Local)
@@ -242,7 +247,9 @@ Please open an issue first for big features.
 
 ## 📜 License
 
-MIT — fork it, ship it, sell it. Just don't pretend you wrote it.
+Vaani's own code is MIT — fork it, ship it, sell it. Just don't pretend you wrote it.
+
+Bundled dependencies keep their own licenses; notably **Handsontable is not MIT** (see the note under Tech Stack).
 
 ---
 
