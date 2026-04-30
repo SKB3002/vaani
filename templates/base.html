@@ -17,12 +17,13 @@
   <link rel="stylesheet" href="/static/css/tokens.css?v=2">
   <link rel="stylesheet" href="/static/css/base.css?v=2">
   <link rel="stylesheet" href="/static/css/components.css?v=2">
-  <link rel="stylesheet" href="/static/css/handsontable-skin.css?v=2">
   <link rel="stylesheet" href="/static/css/charts.css?v=2">
 
-  <!-- Handsontable (community) -->
+  <!-- Handsontable (community) — load CDN CSS first, then our skin overrides it -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.js"></script>
+
+  <link rel="stylesheet" href="/static/css/handsontable-skin.css?v=3">
 
   <!-- Chart.js 4 -->
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
