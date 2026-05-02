@@ -134,12 +134,9 @@ class ChartRegistry(BaseModel):
         return None
 
 
-def load_registry(path: str | Path) -> ChartRegistry:
-    p = Path(path)
-    if not p.exists():
-        raise RegistryError(f"charts.yaml not found at {p}")
+def load_registry_from_text(text: str) -> ChartRegistry:
     try:
-        raw: Any = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        raw: Any = yaml.safe_load(text) or {}
     except yaml.YAMLError as e:
         raise RegistryError(f"invalid YAML: {e}") from e
     if not isinstance(raw, dict):
@@ -148,3 +145,10 @@ def load_registry(path: str | Path) -> ChartRegistry:
         return ChartRegistry.model_validate(raw)
     except ValidationError as e:
         raise RegistryError(str(e)) from e
+
+
+def load_registry(path: str | Path) -> ChartRegistry:
+    p = Path(path)
+    if not p.exists():
+        raise RegistryError(f"charts.yaml not found at {p}")
+    return load_registry_from_text(p.read_text(encoding="utf-8"))

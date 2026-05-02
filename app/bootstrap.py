@@ -101,13 +101,14 @@ charts:
   - id: daily_spend_line
     title: "Daily Spend (Last 30 Days)"
     source: expenses
-    type: line
+    type: area
     x: date
     time_bucket: day
     agg: sum
     y: amount
     filter: "date >= '2026-03-24'"
     format: currency
+    palette: ["--chart-need"]
 
   - id: top_vendors
     title: "Top 10 Vendors (Last 90 Days)"

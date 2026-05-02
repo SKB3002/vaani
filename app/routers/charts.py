@@ -11,10 +11,16 @@ from typing import Any
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Response
 
+from app.bootstrap import DEFAULT_CHARTS_YAML
 from app.config import get_settings
 from app.deps import get_ledger
 from app.services.charts.aggregator import compute_chart
-from app.services.charts.registry import ChartRegistry, RegistryError, load_registry
+from app.services.charts.registry import (
+    ChartRegistry,
+    RegistryError,
+    load_registry,
+    load_registry_from_text,
+)
 from app.services.ledger import LedgerWriter
 
 router = APIRouter(prefix="/api/charts", tags=["charts"])
@@ -26,7 +32,13 @@ def _registry_path() -> Path:
 
 @lru_cache(maxsize=1)
 def _cached_registry() -> ChartRegistry:
-    return load_registry(_registry_path())
+    p = _registry_path()
+    # On Vercel (supabase mode) bootstrap is skipped and `data/meta/charts.yaml`
+    # isn't shipped in the function bundle (data/** is gitignored). Fall back to
+    # the bundled default so charts work without a writable filesystem.
+    if not p.exists():
+        return load_registry_from_text(DEFAULT_CHARTS_YAML)
+    return load_registry(p)
 
 
 def _load_or_422() -> ChartRegistry:
