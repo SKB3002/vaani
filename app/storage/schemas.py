@@ -229,6 +229,30 @@ BUDGET_TABLE_C: TableSchema = {
     "pk": "month",
 }
 
+BUDGET_STATE: TableSchema = {
+    "columns": ["category", "current_budget", "last_rolled_month", "updated_at"],
+    "dtypes": {
+        "category": "string",
+        "current_budget": "float64",
+        "last_rolled_month": "string",
+        "updated_at": "string",
+    },
+    "pk": "category",
+}
+
+BUDGET_ADJUSTMENTS: TableSchema = {
+    "columns": ["id", "timestamp", "category", "amount", "kind", "note"],
+    "dtypes": {
+        "id": "string",
+        "timestamp": "string",
+        "category": "string",
+        "amount": "float64",
+        "kind": "string",
+        "note": "string",
+    },
+    "pk": "id",
+}
+
 DRAFTS: TableSchema = {
     "columns": [
         "id",
@@ -251,6 +275,28 @@ DRAFTS: TableSchema = {
     "pk": "id",
 }
 
+INSIGHTS_CACHE: TableSchema = {
+    "columns": [
+        "id",
+        "owner_id",
+        "kind",
+        "key_hash",
+        "payload_json",
+        "created_at",
+        "expires_at",
+    ],
+    "dtypes": {
+        "id": "string",
+        "owner_id": "string",
+        "kind": "string",
+        "key_hash": "string",
+        "payload_json": "string",
+        "created_at": "string",
+        "expires_at": "string",
+    },
+    "pk": "id",
+}
+
 
 SCHEMAS: dict[str, TableSchema] = {
     "expenses": EXPENSES,
@@ -261,7 +307,10 @@ SCHEMAS: dict[str, TableSchema] = {
     "goals_b": GOALS_B,
     "budget_rules": BUDGET_RULES,
     "budget_table_c": BUDGET_TABLE_C,
+    "budget_state": BUDGET_STATE,
+    "budget_adjustments": BUDGET_ADJUSTMENTS,
     "drafts": DRAFTS,
+    "insights_cache": INSIGHTS_CACHE,
 }
 
 
