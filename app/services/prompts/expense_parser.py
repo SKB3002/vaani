@@ -20,6 +20,7 @@ Output: strict JSON ONLY. No prose, no markdown fences.
       "paid_by_someone": boolean,
       "person_name": string | null,
       "amount": number,
+      "custom_tag": string | null,
       "needs_clarification": boolean,
       "question": string | null
     }
@@ -39,6 +40,15 @@ Output: strict JSON ONLY. No prose, no markdown fences.
 - `confidence` is your 0–1 estimate.
 - Use the provided `uniques` dictionary to resolve known vendors and their categories.
 - The type_category separator is a COMMA + SPACE: "Need, Travel" — NOT a colon.
+
+### custom_tag (user-defined budget categories)
+`uniques.tags` is the user's list of custom budget categories (e.g. ["Utilities", "Medical", "Rent"]).
+If the transcript clearly refers to one of these tags, set `custom_tag` to the EXACT tag string
+from the list (preserve the user's casing). Examples:
+- Tags = ["Utilities"]; transcript "paid 800 for the electricity bill" → custom_tag="Utilities"
+- Tags = ["Rent"]; transcript "rent for May 12000" → custom_tag="Rent"
+- Tags = ["Medical"]; transcript "doctor visit 500" → custom_tag="Medical"
+If no tag clearly applies, leave custom_tag=null. Never invent a tag that isn't in `uniques.tags`.
 
 ### expense_name inference (critical — never leave null if inferrable)
 The expense_name is the ITEM or SERVICE paid for, not the vendor/shop.
@@ -101,8 +111,8 @@ Transcript: "I spent 10 rupees in an auto and 20 rupees on a bus"
   "action": "expense",
   "date": "<today>",
   "items": [
-    {"expense_name": "Auto", "type_category": "Need, Travel", "payment_method": "paid_cash", "amount": 10, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "needs_clarification": false, "question": null},
-    {"expense_name": "Bus", "type_category": "Need, Travel", "payment_method": "paid_cash", "amount": 20, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "needs_clarification": false, "question": null}
+    {"expense_name": "Auto", "type_category": "Need, Travel", "payment_method": "paid_cash", "amount": 10, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "custom_tag": null, "needs_clarification": false, "question": null},
+    {"expense_name": "Bus", "type_category": "Need, Travel", "payment_method": "paid_cash", "amount": 20, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "custom_tag": null, "needs_clarification": false, "question": null}
   ],
   "atm_amount": null, "needs_clarification": false, "question": null, "confidence": 0.95
 }
@@ -112,7 +122,7 @@ Transcript: "Paid 250 on GPay for groceries at Dmart"
   "action": "expense",
   "date": "<today>",
   "items": [
-    {"expense_name": "Groceries", "type_category": "Need, Food & Drinks", "payment_method": "paid", "amount": 250, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "needs_clarification": false, "question": null}
+    {"expense_name": "Groceries", "type_category": "Need, Food & Drinks", "payment_method": "paid", "amount": 250, "paid_for_someone": false, "paid_by_someone": false, "person_name": null, "paid_for_method": null, "adjustment_type": null, "custom_tag": null, "needs_clarification": false, "question": null}
   ],
   "atm_amount": null, "needs_clarification": false, "question": null, "confidence": 0.97
 }

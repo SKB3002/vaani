@@ -50,6 +50,7 @@
         <td class="num mono">${fmt(r.med_balance)}</td>
         <td class="num mono">${fmt(r.emerg_balance)}</td>
         <td class="muted" style="font-size: var(--fs-xs);">${escapeHtml(notesText)}</td>
+        <td><button type="button" class="btn btn--ghost btn--sm bc-adjust-btn" data-category="${escapeHtml(r.category)}">Adjust</button></td>
       `;
       rowsEl.appendChild(tr);
     }
@@ -91,6 +92,71 @@
       recomputeBtn.textContent = "Recompute";
     }
   }
+
+  // ---------------- Adjust dialog (Add / Set) ----------------
+  const adjustDialog = document.getElementById("bc-adjust-dialog");
+  const adjustForm = document.getElementById("bc-adjust-form");
+  const adjustCategoryEl = document.getElementById("bc-adjust-category");
+  const adjustAmountEl = document.getElementById("bc-adjust-amount");
+  const adjustNoteEl = document.getElementById("bc-adjust-note");
+  const adjustCancelBtn = document.getElementById("bc-adjust-cancel");
+  const adjustSubmitBtn = document.getElementById("bc-adjust-submit");
+
+  function openAdjust(category) {
+    adjustCategoryEl.textContent = category;
+    adjustAmountEl.value = "";
+    adjustNoteEl.value = "";
+    const addRadio = adjustForm.querySelector('input[name="kind"][value="add"]');
+    if (addRadio) addRadio.checked = true;
+    if (typeof adjustDialog.showModal === "function") {
+      adjustDialog.showModal();
+    } else {
+      adjustDialog.setAttribute("open", "");
+    }
+    adjustAmountEl.focus();
+  }
+
+  function closeAdjust() {
+    if (typeof adjustDialog.close === "function") adjustDialog.close();
+    else adjustDialog.removeAttribute("open");
+  }
+
+  rowsEl.addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".bc-adjust-btn");
+    if (!btn) return;
+    openAdjust(btn.dataset.category || "");
+  });
+
+  adjustCancelBtn.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    closeAdjust();
+  });
+
+  adjustForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const category = adjustCategoryEl.textContent || "";
+    const kind = (adjustForm.querySelector('input[name="kind"]:checked') || {}).value || "add";
+    const amount = Number(adjustAmountEl.value);
+    const note = adjustNoteEl.value.trim() || null;
+    if (!Number.isFinite(amount) || amount < 0) {
+      toast({ type: "danger", message: "Enter a valid non-negative amount." });
+      return;
+    }
+    adjustSubmitBtn.disabled = true;
+    try {
+      await api("/api/budgets/adjust", {
+        method: "POST",
+        body: { category, amount, kind, note },
+      });
+      toast({ type: "success", message: `${kind === "set" ? "Set" : "Added"} ₹${amount} for ${category}` });
+      closeAdjust();
+      await load();
+    } catch (e) {
+      toast({ type: "danger", title: "Adjust failed", message: e.message });
+    } finally {
+      adjustSubmitBtn.disabled = false;
+    }
+  });
 
   monthInput.value = currentMonth();
   monthInput.addEventListener("change", load);

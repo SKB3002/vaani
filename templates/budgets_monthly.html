@@ -34,10 +34,37 @@
         <th class="num">Med bal</th>
         <th class="num">Emerg bal</th>
         <th>Notes</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody id="bc-rows"></tbody>
   </table>
+
+  <dialog id="bc-adjust-dialog" class="dialog">
+    <form method="dialog" id="bc-adjust-form" class="vstack" style="gap: var(--sp-3); padding: var(--sp-4); min-width: 320px;">
+      <h3 class="card__title" style="margin: 0;">Adjust budget — <span id="bc-adjust-category"></span></h3>
+      <div class="vstack" style="gap: var(--sp-2);">
+        <label class="hstack" style="gap: var(--sp-2);">
+          <input type="radio" name="kind" value="add" checked /> Add to current pool
+        </label>
+        <label class="hstack" style="gap: var(--sp-2);">
+          <input type="radio" name="kind" value="set" /> Set pool to exact amount
+        </label>
+      </div>
+      <label>
+        Amount (₹)
+        <input type="number" id="bc-adjust-amount" name="amount" min="0" step="0.01" required class="input" />
+      </label>
+      <label>
+        Note (optional)
+        <input type="text" id="bc-adjust-note" name="note" class="input" maxlength="200" />
+      </label>
+      <div class="hstack" style="gap: var(--sp-2); justify-content: flex-end;">
+        <button type="button" id="bc-adjust-cancel" class="btn btn--ghost">Cancel</button>
+        <button type="submit" id="bc-adjust-submit" class="btn">Apply</button>
+      </div>
+    </form>
+  </dialog>
   <div id="bc-empty" hidden>
     {{ empty_state("No Table C rows yet", "Add budget rules and log expenses, then click Recompute.", cta_label="Edit rules", cta_href="/budgets", icon="chart") }}
   </div>

@@ -27,12 +27,17 @@ DEFAULT_META = {
         "medical_upper_cap": 10000,
         "emergency_monthly_cap": 5000,
     },
+    "pots": {
+        "med_balance": 0.0,
+        "emerg_balance": 0.0,
+    },
 }
 
 DEFAULT_UNIQUES: dict[str, Any] = {
     "vendors": {},
     "aliases": {},
     "people": [],
+    "tags": [],
 }
 
 DEFAULT_BUDGET_RULES: list[dict[str, Any]] = [

@@ -47,6 +47,14 @@ def tmp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[P
     monkeypatch.setenv("FINEYE_DATA_DIR", str(data))
     monkeypatch.setenv("FINEYE_WAL_DIR", str(wal))
     monkeypatch.setenv("FINEYE_TMP_DIR", str(tmp_dir))
+    # Force csv mode for tests; .env may set supabase which would taint runs
+    # by hitting the real shared DB.
+    monkeypatch.setenv("FINEYE_STORAGE_BACKEND", "csv")
+    # Override (don't just delete) since pydantic-settings re-reads .env. Empty
+    # values prevent the supabase observer from firing against the real DB and
+    # the auth middleware from gating test requests.
+    for var in ("DB_HOST", "DB_USER", "DB_PASSWORD", "FINEYE_APP_PASSWORD"):
+        monkeypatch.setenv(var, "")
 
     # Force re-init of cached settings + deps
     from app import config as _cfg

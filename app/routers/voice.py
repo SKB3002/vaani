@@ -6,8 +6,9 @@ import threading
 from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 import ulid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
@@ -50,6 +51,7 @@ class ConfirmItem(BaseModel):
     person_name: str | None = None
     paid_for_method: Literal["cash", "online"] | None = None
     adjustment_type: Literal["cash_to_online", "online_to_cash"] | None = None
+    custom_tag: str | None = None
 
 
 class ConfirmRequest(BaseModel):
@@ -68,14 +70,15 @@ def _uniques_path() -> Path:
 def _load_uniques() -> dict[str, Any]:
     path = _uniques_path()
     if not path.exists():
-        return {"vendors": {}, "aliases": {}, "people": []}
+        return {"vendors": {}, "aliases": {}, "people": [], "tags": []}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
-        return {"vendors": {}, "aliases": {}, "people": []}
+        return {"vendors": {}, "aliases": {}, "people": [], "tags": []}
     data.setdefault("vendors", {})
     data.setdefault("aliases", {})
     data.setdefault("people", [])
+    data.setdefault("tags", [])
     return data  # type: ignore[no-any-return]
 
 
@@ -133,6 +136,67 @@ def teach_uniques(payload: TeachRequest) -> dict[str, Any]:
 
         _save_uniques(data)
     return data
+
+
+@router.post("/voice/transcribe")
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    language: str | None = Form(default=None),
+) -> dict[str, Any]:
+    """Transcribe a recorded audio blob via Groq Whisper.
+
+    Returns {"text": str}. Used as a post-recording accuracy pass — the JS
+    keeps browser-STT live typing for UX, then upgrades the transcript via
+    this endpoint before submitting to /expense/parse.
+
+    Falls back to a 503 (with a Retry-After hint) so the client can still
+    submit the browser-STT version it already has.
+    """
+    cfg = get_settings()
+    if not cfg.GROQ_API_KEY:
+        raise HTTPException(503, detail="Voice transcription unavailable (set GROQ_API_KEY).")
+
+    blob = await audio.read()
+    if not blob:
+        raise HTTPException(422, detail="empty audio upload")
+    # Hard cap (Groq accepts up to 25MB; cap at ~10MB for short clips).
+    if len(blob) > 10 * 1024 * 1024:
+        raise HTTPException(413, detail="audio too large (max 10MB)")
+
+    filename = audio.filename or "clip.webm"
+    content_type = audio.content_type or "audio/webm"
+
+    files = {"file": (filename, blob, content_type)}
+    data: dict[str, str] = {
+        "model": cfg.GROQ_WHISPER_MODEL,
+        "response_format": "json",
+        "temperature": "0",
+    }
+    if language:
+        data["language"] = language  # ISO-639-1, e.g. "en". Omit to auto-detect.
+
+    url = f"{cfg.GROQ_BASE_URL.rstrip('/')}/audio/transcriptions"
+    headers = {"Authorization": f"Bearer {cfg.GROQ_API_KEY}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(url, headers=headers, files=files, data=data)
+    except httpx.HTTPError as exc:
+        raise HTTPException(503, detail=f"Whisper transport error: {exc}",
+                            headers={"Retry-After": "5"}) from exc
+
+    if resp.status_code == 429 or resp.status_code >= 500:
+        raise HTTPException(503, detail=f"Whisper unavailable: {resp.status_code}",
+                            headers={"Retry-After": "5"})
+    if resp.status_code >= 400:
+        raise HTTPException(resp.status_code, detail=f"Whisper error: {resp.text[:300]}")
+
+    try:
+        text = str(resp.json().get("text", "")).strip()
+    except (ValueError, KeyError):
+        raise HTTPException(502, detail="malformed Whisper response") from None
+
+    return {"text": text}
 
 
 @router.post("/expense/parse")
@@ -223,6 +287,7 @@ async def parse_expense(
             "person_name": item.person_name,
             "paid_for_method": item.paid_for_method,
             "adjustment_type": item.adjustment_type,
+            "custom_tag": item.custom_tag,
         })
 
     if not preview_items and clarify_items:
@@ -294,6 +359,7 @@ def confirm_expenses(
             "raw_transcript": payload.raw_transcript,
             "notes": None,
             "import_batch_id": None,
+            "custom_tag": item.custom_tag,
             "paid_for_method": paid_for_method,
             "adjustment_type": None,
         }

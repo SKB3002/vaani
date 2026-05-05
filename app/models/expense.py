@@ -136,6 +136,7 @@ class ParsedExpenseItem(BaseModel):
     amount: float | None = None
     paid_for_method: Literal["cash", "online"] | None = None
     adjustment_type: Literal["cash_to_online", "online_to_cash"] | None = None
+    custom_tag: str | None = None
     needs_clarification: bool = False
     question: str | None = None
 

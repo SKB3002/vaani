@@ -1,21 +1,30 @@
-"""Budget runner — orchestrates loading CSVs, iterating months, and writing Table C.
+"""Budget runner — running-state engine.
 
-The overflow engine (`overflow.compute_month`) is pure. All I/O lives here.
+Table C is one row per category, persistent across months. The pool
+(`current_budget`) lives in `budget_state`; medical/emergency pots live in
+`meta.json` under `pots`. The engine (`overflow.compute_running_state`) is
+pure; all I/O lives here.
 """
 from __future__ import annotations
 
 import json
 import threading
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from app.models.budget import BudgetRule, CapsConfig, OverflowRow
+from app.models.budget import (
+    BudgetRule,
+    CapsConfig,
+    OverflowRow,
+    RunningCategoryState,
+)
 from app.services.ledger import LedgerWriter
-from app.services.overflow import compute_month
+from app.services.overflow import compute_running_state
 from app.storage.csv_store import atomic_write_csv, file_lock, read_csv_typed
 from app.storage.schemas import SCHEMAS, table_path
 
@@ -63,45 +72,59 @@ class BudgetRunner:
         caps_raw = data.get("caps", {})
         return CapsConfig(**caps_raw)
 
+    def _load_pots(self) -> tuple[float, float]:
+        """Return (med_balance, emerg_balance) from meta.json."""
+        meta_path = self.data_dir / "meta.json"
+        if not meta_path.exists():
+            return 0.0, 0.0
+        data: dict[str, Any] = json.loads(meta_path.read_text(encoding="utf-8"))
+        pots = data.get("pots") or {}
+        return float(pots.get("med_balance", 0.0)), float(pots.get("emerg_balance", 0.0))
+
+    def _save_pots(self, med: float, emerg: float) -> None:
+        from app.config import get_settings
+        if get_settings().STORAGE_BACKEND == "supabase":
+            return  # filesystem is read-only on Vercel; pots not persisted
+        meta_path = self.data_dir / "meta.json"
+        data: dict[str, Any] = {}
+        if meta_path.exists():
+            data = json.loads(meta_path.read_text(encoding="utf-8"))
+        data["pots"] = {
+            "med_balance": round(float(med), 2),
+            "emerg_balance": round(float(emerg), 2),
+        }
+        meta_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    def _load_state(self) -> dict[str, RunningCategoryState]:
+        df = self.ledger.read("budget_state")
+        if df.empty:
+            return {}
+        out: dict[str, RunningCategoryState] = {}
+        for _, row in df.iterrows():
+            cat = str(row["category"])
+            cb = row["current_budget"]
+            lr = row["last_rolled_month"]
+            ua = row["updated_at"]
+            out[cat] = RunningCategoryState(
+                category=cat,
+                current_budget=float(cb) if pd.notna(cb) else 0.0,
+                last_rolled_month=str(lr) if pd.notna(lr) else "",
+                updated_at=str(ua) if pd.notna(ua) else "",
+            )
+        return out
+
     def _load_expenses(self) -> pd.DataFrame:
         return self.ledger.read("expenses")
 
     # ---------- month utilities ----------
-    def _month_range(self, expenses: pd.DataFrame) -> list[str]:
-        """Produce chronological list of months from earliest expense to current local month."""
+    def _current_month(self) -> str:
         tz = ZoneInfo(self.timezone)
-        from datetime import datetime as _dt
+        now_local = datetime.now(tz).date()
+        return f"{now_local.year:04d}-{now_local.month:02d}"
 
-        now_local = _dt.now(tz).date()
-        current_month = f"{now_local.year:04d}-{now_local.month:02d}"
-
-        if expenses.empty:
-            return [current_month]
-
-        dates = pd.to_datetime(expenses["date"], errors="coerce").dropna()
-        if dates.empty:
-            return [current_month]
-        start = dates.min().date()
-        end = now_local
-        if start > end:
-            start = end
-
-        months: list[str] = []
-        y, m = start.year, start.month
-        while (y, m) <= (end.year, end.month):
-            months.append(f"{y:04d}-{m:02d}")
-            m += 1
-            if m > 12:
-                m = 1
-                y += 1
-        return months
-
-    @staticmethod
-    def _filter_month(expenses: pd.DataFrame, month: str) -> pd.DataFrame:
-        if expenses.empty:
-            return expenses
-        mask = expenses["date"].astype("string").fillna("").str.startswith(month)
-        return expenses.loc[mask]
+    def _now_iso(self) -> str:
+        tz = ZoneInfo(self.timezone)
+        return datetime.now(tz).isoformat()
 
     # ---------- main entry ----------
     def recompute_all(self) -> RunSummary:
@@ -112,46 +135,34 @@ class BudgetRunner:
         rules = self._load_rules()
         caps = self._load_caps()
         expenses = self._load_expenses()
+        prior_state = self._load_state()
+        med_in, emerg_in = self._load_pots()
 
-        months = self._month_range(expenses)
-        all_rows: list[OverflowRow] = []
-        all_warnings: list[str] = []
-
-        prior_carry: dict[str, float] = {}
-        med_balance = 0.0
-        emerg_balance = 0.0
-
-        for month in months:
-            month_expenses = self._filter_month(expenses, month)
-            result = compute_month(
-                month=month,
-                rules=rules,
-                expenses=month_expenses,
-                prior_carry=prior_carry,
-                caps=caps,
-                med_in=med_balance,
-                emerg_in=emerg_balance,
-            )
-            all_rows.extend(result.rows)
-            all_warnings.extend(result.warnings)
-            prior_carry = result.next_carry
-            med_balance = result.med_balance_out
-            emerg_balance = result.emerg_balance_out
-
-        self._write_table_c(all_rows)
-
-        last_month = months[-1] if months else ""
-        last_snapshot = [
-            r.model_dump() for r in all_rows if r.month == last_month
-        ]
-        return RunSummary(
-            months_computed=len(months),
-            warnings=all_warnings,
-            last_month_snapshot=last_snapshot,
+        current_month = self._current_month()
+        result = compute_running_state(
+            current_month=current_month,
+            rules=rules,
+            expenses=expenses,
+            prior_state=prior_state,
+            caps=caps,
+            med_in=med_in,
+            emerg_in=emerg_in,
+            now_iso=self._now_iso(),
         )
 
+        self._write_table_c(result.rows)
+        self._write_state(result.new_state)
+        self._save_pots(result.med_balance_out, result.emerg_balance_out)
+
+        return RunSummary(
+            months_computed=1,
+            warnings=result.warnings,
+            last_month_snapshot=[r.model_dump() for r in result.rows],
+        )
+
+    # ---------- writers ----------
     def _write_table_c(self, rows: list[OverflowRow]) -> None:
-        """Replace-all write of budget_table_c — via ledger so supabase mode works."""
+        """Replace-all write of budget_table_c — via direct CSV/supabase."""
         from app.config import get_settings
         supabase_mode = get_settings().STORAGE_BACKEND == "supabase"
 
@@ -159,21 +170,51 @@ class BudgetRunner:
         records = [r.model_dump() for r in rows] if rows else []
 
         if supabase_mode:
-            from app.storage.supabase_store import _delete_where, _upsert
             from app.config import get_settings as _gs
+            from app.storage.supabase_store import _delete_where, _upsert
             uid = _gs().OWNER_ID
-            # Wipe all existing rows for this owner then re-insert
             _delete_where("budget_table_c", "user_id", uid)
             for rec in records:
                 _upsert("budget_table_c", rec)
         else:
-            df = pd.DataFrame(records, columns=schema["columns"]) if records else pd.DataFrame({col: [] for col in schema["columns"]})
+            df = (
+                pd.DataFrame(records, columns=schema["columns"])
+                if records
+                else pd.DataFrame({col: [] for col in schema["columns"]})
+            )
             path = Path(table_path(str(self.data_dir), "budget_table_c"))
+            with file_lock(path):
+                atomic_write_csv(df, path)
+
+    def _write_state(self, states: list[RunningCategoryState]) -> None:
+        """Replace-all write of budget_state."""
+        from app.config import get_settings
+        supabase_mode = get_settings().STORAGE_BACKEND == "supabase"
+
+        schema = SCHEMAS["budget_state"]
+        records = [s.model_dump() for s in states] if states else []
+
+        if supabase_mode:
+            from app.config import get_settings as _gs
+            from app.storage.supabase_store import _delete_where, _upsert
+            uid = _gs().OWNER_ID
+            _delete_where("budget_state", "user_id", uid)
+            for rec in records:
+                _upsert("budget_state", rec)
+        else:
+            df = (
+                pd.DataFrame(records, columns=schema["columns"])
+                if records
+                else pd.DataFrame({col: [] for col in schema["columns"]})
+            )
+            path = Path(table_path(str(self.data_dir), "budget_state"))
             with file_lock(path):
                 atomic_write_csv(df, path)
 
     # ---------- reads ----------
     def read_table_c(self, month: str | None = None) -> list[dict[str, Any]]:
+        """Return Table C rows. `month` is accepted for API compat but ignored —
+        Table C is now per-category running state, not month-stamped history."""
         from app.config import get_settings
         if get_settings().STORAGE_BACKEND == "supabase":
             from app.storage.supabase_store import read_table
@@ -183,6 +224,7 @@ class BudgetRunner:
             df = read_csv_typed(path, SCHEMAS["budget_table_c"])
         if df.empty:
             return []
+        # If multiple months somehow exist (legacy data), keep latest
         if month is None:
             months = sorted(df["month"].dropna().astype("string").unique().tolist())
             if not months:
@@ -191,3 +233,62 @@ class BudgetRunner:
         rows = df[df["month"].astype("string") == month]
         safe = rows.astype(object).where(rows.notna(), None)
         return safe.to_dict(orient="records")  # type: ignore[no-any-return]
+
+    # ---------- adjustments (button-driven) ----------
+    def apply_adjustment(self, category: str, amount: float, kind: str, note: str | None = None) -> RunningCategoryState:
+        """Apply an Add/Set adjustment to a category's current_budget pool.
+
+        Logs to `budget_adjustments` and updates `budget_state` directly.
+        Caller should call `recompute_all()` afterwards to refresh Table C.
+        """
+        if kind not in ("add", "set"):
+            raise ValueError(f"unknown adjustment kind: {kind}")
+        if amount < 0:
+            raise ValueError("amount must be non-negative")
+
+        # Audit log
+        import ulid
+        adj_id = str(ulid.new())
+        self.ledger.append("budget_adjustments", {
+            "id": adj_id,
+            "timestamp": self._now_iso(),
+            "category": category,
+            "amount": float(amount),
+            "kind": kind,
+            "note": note,
+        })
+
+        # Update state
+        prior = self._load_state()
+        existing = prior.get(category)
+        current_month = self._current_month()
+        if existing is None:
+            new_pool = float(amount) if kind in ("add", "set") else 0.0
+            new_state = RunningCategoryState(
+                category=category,
+                current_budget=round(new_pool, 2),
+                last_rolled_month=current_month,
+                updated_at=self._now_iso(),
+            )
+        else:
+            new_pool = (
+                float(existing.current_budget) + float(amount)
+                if kind == "add"
+                else float(amount)
+            )
+            new_state = RunningCategoryState(
+                category=category,
+                current_budget=round(new_pool, 2),
+                last_rolled_month=existing.last_rolled_month or current_month,
+                updated_at=self._now_iso(),
+            )
+
+        # Upsert into budget_state
+        df = self.ledger.read("budget_state")
+        exists = not df.empty and (df["category"].astype("string") == category).any()
+        row = new_state.model_dump()
+        if exists:
+            self.ledger.update("budget_state", category, row)
+        else:
+            self.ledger.append("budget_state", row)
+        return new_state

@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.config import get_settings
 from app.deps import get_budget_runner, get_ledger
-from app.models.budget import BudgetRuleIn, BudgetRulePatch, CapsPatch
+from app.models.budget import BudgetAdjustIn, BudgetRuleIn, BudgetRulePatch, CapsPatch
+from app.services import uniques as uniques_store
 from app.services.budget_runner import BudgetRunner, RunSummary
 from app.services.ledger import LedgerWriter
 
@@ -83,6 +84,7 @@ def upsert_rule(
         ledger.update("budget_rules", payload.category, row)
     else:
         ledger.append("budget_rules", row)
+    uniques_store.add_tag(payload.category)
     runner.recompute_all()
     return row
 
@@ -112,6 +114,7 @@ def delete_rule(
 ) -> None:
     if not ledger.delete("budget_rules", category):
         raise HTTPException(404, "rule not found")
+    uniques_store.remove_tag(category)
     runner.recompute_all()
 
 
@@ -166,3 +169,42 @@ def recompute(
 ) -> dict[str, Any]:
     summary = runner.recompute_all()
     return _run_summary_dict(summary)
+
+
+# ---------- tags (auto-derived from budget_rules) ----------
+
+
+@router.get("/tags")
+def list_tags() -> dict[str, Any]:
+    """Known custom tags — auto-populated from budget rule categories.
+
+    Used by the expense form autocomplete and the LLM categorizer."""
+    return {"tags": uniques_store.list_tags()}
+
+
+# ---------- adjustments (manual Add/Set buttons) ----------
+
+
+@router.post("/adjust")
+def adjust_budget(
+    payload: BudgetAdjustIn,
+    ledger: LedgerWriter = Depends(get_ledger),
+    runner: BudgetRunner = Depends(get_budget_runner),
+) -> dict[str, Any]:
+    rules_df = ledger.read("budget_rules")
+    if rules_df.empty or not (rules_df["category"].astype("string") == payload.category).any():
+        raise HTTPException(404, f"category '{payload.category}' not found in budget_rules")
+
+    state = runner.apply_adjustment(
+        category=payload.category,
+        amount=float(payload.amount),
+        kind=payload.kind,
+        note=payload.note,
+    )
+    runner.recompute_all()
+    return {
+        "category": state.category,
+        "current_budget": state.current_budget,
+        "last_rolled_month": state.last_rolled_month,
+        "updated_at": state.updated_at,
+    }

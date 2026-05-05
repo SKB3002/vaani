@@ -34,6 +34,8 @@ _CONFLICT_COLS: dict[str, list[str]] = {
     "goals_b": ["goal_id"],
     "budget_rules": ["user_id", "category"],
     "budget_table_c": ["user_id", "month", "category"],
+    "budget_state": ["user_id", "category"],
+    "budget_adjustments": ["id"],
     "drafts": ["id"],
 }
 
@@ -43,6 +45,7 @@ _COMPOUND_PK_TABLES: set[str] = {
     "investments",
     "budget_rules",
     "budget_table_c",
+    "budget_state",
 }
 
 

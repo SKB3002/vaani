@@ -64,3 +64,34 @@ class OverflowResult(BaseModel):
 
     def to_records(self) -> list[dict[str, Any]]:
         return [r.model_dump() for r in self.rows]
+
+
+class RunningCategoryState(BaseModel):
+    """Per-category running pool. One row per `budget_rules` category."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    category: str
+    current_budget: float = 0.0
+    last_rolled_month: str = ""  # "YYYY-MM"; empty = never rolled
+    updated_at: str = ""
+
+
+class RunningStateResult(BaseModel):
+    """Engine output: one Table-C row per category + new pots + audit info."""
+
+    rows: list[OverflowRow]
+    new_state: list[RunningCategoryState]
+    med_balance_out: float
+    emerg_balance_out: float
+    warnings: list[str] = Field(default_factory=list)
+    rolled_categories: list[str] = Field(default_factory=list)
+
+
+class BudgetAdjustIn(BaseModel):
+    """Add/Set button payload."""
+
+    category: str = Field(min_length=1)
+    amount: float = Field(ge=0)
+    kind: str = Field(pattern=r"^(add|set)$")
+    note: str | None = None
