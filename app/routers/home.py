@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import pandas as pd
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -59,13 +61,13 @@ def home(
                 ["date", "created_at"], ascending=[False, False]
             ).head(5)
             for _, r in recent_df.iterrows():
-                amount_val = float(r["amount"]) if r["amount"] == r["amount"] else 0.0  # NaN check
+                amount_val = float(r["amount"]) if not pd.isna(r["amount"]) else 0.0
                 recent.append(
                     {
                         "date": r["date"],
                         "expense_name": r["expense_name"],
-                        "type_category": r["type_category"] if r["type_category"] == r["type_category"] else None,
-                        "payment_method": r["payment_method"] if r["payment_method"] == r["payment_method"] else None,
+                        "type_category": None if pd.isna(r["type_category"]) else r["type_category"],
+                        "payment_method": None if pd.isna(r["payment_method"]) else r["payment_method"],
                         "amount": amount_val,
                         "amount_display": _format_inr(amount_val),
                     }
