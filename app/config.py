@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = Field(
         default="llama-3.3-70b-versatile", validation_alias="GROQ_MODEL"
     )
+    GROQ_FALLBACK_MODEL: str = Field(
+        default="openai/gpt-oss-120b", validation_alias="GROQ_FALLBACK_MODEL"
+    )
+    GROQ_ANALYSIS_MODEL: str = Field(
+        default="openai/gpt-oss-120b", validation_alias="GROQ_ANALYSIS_MODEL"
+    )
+    GROQ_WHISPER_MODEL: str = Field(
+        default="whisper-large-v3-turbo", validation_alias="GROQ_WHISPER_MODEL"
+    )
     GROQ_BASE_URL: str = Field(
         default="https://api.groq.com/openai/v1", validation_alias="GROQ_BASE_URL"
     )

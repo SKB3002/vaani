@@ -6,6 +6,12 @@ from functools import lru_cache
 from app.config import get_settings
 from app.services.balances import BalanceService
 from app.services.budget_runner import BudgetRunner
+from app.services.insights.llm_client import (
+    AnalysisLLMClient,
+)
+from app.services.insights.llm_client import (
+    get_analysis_llm_client as _real_get_analysis_llm,
+)
 from app.services.ledger import LedgerWriter
 from app.services.llm import LLMClient
 from app.services.llm import get_llm_client as _real_get_llm
@@ -34,3 +40,13 @@ def get_budget_runner() -> BudgetRunner:
 
 def get_llm_client() -> LLMClient:
     return _real_get_llm()
+
+
+@lru_cache(maxsize=1)
+def get_analysis_llm_client() -> AnalysisLLMClient:
+    """Process-wide singleton for the insights analysis-model client.
+
+    Independent of `get_llm_client()` — voice and analysis paths use
+    different models and must not share configuration.
+    """
+    return _real_get_analysis_llm()
