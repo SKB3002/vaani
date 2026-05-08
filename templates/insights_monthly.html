@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set active_page = "insights_monthly" %}
+{% block title %}Monthly Briefing · Vaani{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1 class="page-head__title">Monthly Briefing</h1>
+    <p class="page-head__sub">AI-narrated overview of your spending, anchored in deterministic stats.</p>
+  </div>
+  <div class="hstack" style="gap: var(--sp-2);">
+    <input type="month" id="ib-month" class="input" style="width: 160px;" />
+    <button id="ib-regenerate" class="btn btn--ghost" type="button">Regenerate</button>
+  </div>
+</section>
+
+<div id="ib-status" class="muted" style="margin-bottom: var(--sp-3);"></div>
+
+<div id="ib-banner" class="card" hidden style="margin-bottom: var(--sp-3);">
+  <p id="ib-banner-text" class="muted"></p>
+</div>
+
+<div id="ib-headline" class="card" hidden>
+  <div class="hstack" style="gap: var(--sp-2); align-items: center;">
+    <h2 id="ib-headline-text" class="card__title" style="margin: 0;"></h2>
+    <span id="ib-tone-pill" class="chip"></span>
+    <span id="ib-cache-pill" class="chip"></span>
+  </div>
+</div>
+
+<div id="ib-sections" class="vstack" style="gap: var(--sp-3); margin-top: var(--sp-3);"></div>
+
+<div id="ib-stats-summary" class="card" hidden style="margin-top: var(--sp-3);">
+  <h3 class="card__title">Numbers</h3>
+  <div id="ib-stats-grid" class="grid"></div>
+</div>
+{% endblock %}
+
+{% block body_end %}
+<script defer src="/static/js/insights_monthly.js?v=1"></script>
+{% endblock %}

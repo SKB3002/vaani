@@ -89,6 +89,11 @@ def charts_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "charts.html", _ctx(request))
 
 
+@router.get("/insights/monthly", response_class=HTMLResponse)
+def insights_monthly_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "insights_monthly.html", _ctx(request))
+
+
 @router.get("/imports", response_class=HTMLResponse)
 def imports_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "imports.html", _ctx(request))
