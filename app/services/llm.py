@@ -7,6 +7,7 @@ swap in the real GroqLLMClient at runtime when GROQ_API_KEY is configured.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date
 from typing import Any, Protocol, runtime_checkable
 
@@ -16,6 +17,8 @@ from pydantic import BaseModel, Field, ValidationError
 from app.config import get_settings
 from app.models.expense import ParsedExpense
 from app.services.prompts.expense_parser import EXPENSE_PARSER_SYSTEM
+
+_logger = logging.getLogger("vaani.llm")
 
 
 class LLMError(Exception):
@@ -173,14 +176,43 @@ class GroqLLMClient:
         Returns the raw assistant content; the caller is responsible for JSON
         parsing and schema validation. When ``model`` is None, defaults to
         ``settings.GROQ_ANALYSIS_MODEL`` (NOT the primary expense-parser model).
-        Errors propagate as ``LLMTransportError``; no fallback is attempted.
+
+        On ``LLMTransportError`` from the chosen model, if the error looks like
+        an availability issue (transport failure, 429, or 5xx) and a
+        ``fallback_model`` is configured AND the chosen model is not already
+        the fallback, retries once on the fallback model. Any error from the
+        fallback attempt propagates. Bad-JSON / schema-validation failures are
+        the caller's concern (parsing happens outside this method) and are
+        unaffected by this fallback path.
         """
         chosen_model = model or get_settings().GROQ_ANALYSIS_MODEL
         messages: list[dict[str, str]] = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
-        return await self._post(messages, model=chosen_model, max_tokens=max_tokens)
+        try:
+            return await self._post(
+                messages, model=chosen_model, max_tokens=max_tokens
+            )
+        except LLMTransportError as exc:
+            if (
+                self._fallback_model
+                and chosen_model != self._fallback_model
+                and _is_availability_error(exc)
+            ):
+                _logger.warning(
+                    "chat_json: primary model %s unavailable (%s); "
+                    "retrying on fallback %s",
+                    chosen_model,
+                    exc,
+                    self._fallback_model,
+                )
+                return await self._post(
+                    messages,
+                    model=self._fallback_model,
+                    max_tokens=max_tokens,
+                )
+            raise
 
     async def _parse_with_model(
         self, transcript: str, ctx: ParseContext, model: str
