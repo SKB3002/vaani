@@ -11,9 +11,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.bootstrap import bootstrap
 from app.config import get_settings
-from app.deps import get_budget_runner, get_ledger
+from app.deps import get_budget_runner, get_insights_cache, get_ledger
 from app.middleware.auth import PasswordGateMiddleware, make_login_router
-from app.storage.supabase_store import supabase_observer
 from app.routers import (
     balances,
     budgets,
@@ -34,7 +33,9 @@ from app.routers import (
     voice,
     wishlist,
 )
+from app.services.insights.cache import make_invalidator
 from app.services.sheets import lifecycle as sheets_lifecycle
+from app.storage.supabase_store import supabase_observer
 
 logger = logging.getLogger("fineye")
 
@@ -92,6 +93,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if cfg.supabase_configured and not supabase_mode:
         ledger.on_change(supabase_observer)
         logger.info("Supabase dual-write observer registered")
+
+    # Insights cache invalidator — drops cached narrations when the underlying
+    # bundle-affecting tables change. Mode-agnostic: relies on LedgerWriter,
+    # which already abstracts csv vs supabase backends.
+    ledger.on_change(make_invalidator(get_insights_cache()))
+    logger.info("Insights cache invalidator registered")
 
     # Google Sheets backup (M6) — strictly opt-in; failures never block the app.
     try:

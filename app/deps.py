@@ -6,6 +6,7 @@ from functools import lru_cache
 from app.config import get_settings
 from app.services.balances import BalanceService
 from app.services.budget_runner import BudgetRunner
+from app.services.insights.cache import InsightsCache
 from app.services.insights.llm_client import (
     AnalysisLLMClient,
 )
@@ -40,6 +41,23 @@ def get_budget_runner() -> BudgetRunner:
 
 def get_llm_client() -> LLMClient:
     return _real_get_llm()
+
+
+@lru_cache(maxsize=1)
+def get_insights_cache() -> InsightsCache:
+    """Process-wide singleton for the narration cache.
+
+    Wires the configured TTL and owner id from settings. Tests must call
+    ``get_insights_cache.cache_clear()`` (the ``tmp_workspace`` fixture
+    already clears the other singletons; extend it for cache-touching
+    tests).
+    """
+    settings = get_settings()
+    return InsightsCache(
+        get_ledger(),
+        ttl_days=settings.INSIGHTS_CACHE_TTL_DAYS,
+        owner_id=settings.OWNER_ID,
+    )
 
 
 @lru_cache(maxsize=1)

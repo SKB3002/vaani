@@ -40,6 +40,14 @@ class Settings(BaseSettings):
         default="https://api.groq.com/openai/v1", validation_alias="GROQ_BASE_URL"
     )
 
+    # AI Insights — narration cache + retry budget.
+    INSIGHTS_CACHE_TTL_DAYS: int = Field(
+        default=30, validation_alias="INSIGHTS_CACHE_TTL_DAYS"
+    )
+    INSIGHTS_NARRATION_MAX_RETRIES: int = Field(
+        default=1, validation_alias="INSIGHTS_NARRATION_MAX_RETRIES"
+    )
+
     # Google Sheets backup (M6) — read from env without FINEYE_ prefix.
     GOOGLE_SHEETS_CREDENTIALS_PATH: str = Field(
         default="", validation_alias="GOOGLE_SHEETS_CREDENTIALS_PATH"
