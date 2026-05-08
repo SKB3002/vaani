@@ -56,6 +56,11 @@ Just speak naturally. Groq's LPU transcribes (Whisper) and LLaMA 3.3 categorizes
 - Works **offline** (CSV fallback), syncs when online
 - Same patterns Postgres uses, applied at the app layer
 
+### 🚄 Fast Page Loads
+- **Connection pooling** to Supabase (`psycopg2.ThreadedConnectionPool`, max 5) — every query reuses a warm TLS connection instead of doing a fresh handshake
+- A multi-table page that used to spend ~735ms just opening connections now does it in ~206ms warm / ~251ms cold (~3.5× faster)
+- Pool is created lazily on first use so Vercel cold-start import stays cheap; broken connections are discarded after errors so a transient failure doesn't poison the pool
+
 ### 📥 Import & Export
 - CSV/Excel import with smart column mapping
 - Full export to CSV
