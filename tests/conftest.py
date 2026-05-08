@@ -65,6 +65,8 @@ def tmp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[P
     _deps.get_ledger.cache_clear()
     _deps.get_balance_service.cache_clear()
     _deps.get_budget_runner.cache_clear()
+    _deps.get_insights_cache.cache_clear()
+    _deps.get_analysis_llm_client.cache_clear()
     _tz.invalidate_cache()
 
     bootstrap_for(data, wal, tmp_dir)
@@ -77,6 +79,8 @@ def tmp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[P
         _cfg.get_settings.cache_clear()
         _deps.get_ledger.cache_clear()
         _deps.get_balance_service.cache_clear()
+        _deps.get_insights_cache.cache_clear()
+        _deps.get_analysis_llm_client.cache_clear()
         _tz.invalidate_cache()
 
 
