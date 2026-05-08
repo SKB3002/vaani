@@ -90,10 +90,13 @@ class LedgerWriter:
         """Patch one row identified by the table's PK. Returns updated row or None."""
         self._check_table(table)
         if self._supabase_mode:
-            from app.storage.supabase_store import _upsert
-            merged = {SCHEMAS[table]["pk"]: pk_value, **updates}
-            _upsert(table, merged)
-            updated: dict[str, Any] | None = merged
+            from app.storage.supabase_store import _update_by_pk
+            updated: dict[str, Any] | None = _update_by_pk(
+                table, SCHEMAS[table]["pk"], pk_value, updates
+            )
+            if updated is not None:
+                # Strip user_id so callers see CSV-shaped row
+                updated.pop("user_id", None)
         else:
             entry = self.wal.append(table, "update", {"pk_value": pk_value, "updates": updates})
             updated = self._apply_update(table, pk_value, updates)

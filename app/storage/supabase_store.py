@@ -100,6 +100,50 @@ def _upsert(table: str, row: dict[str, Any]) -> None:
         log.exception("supabase upsert failed for table=%s", table)
 
 
+def _update_by_pk(
+    table: str, pk_column: str, pk_value: str, updates: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Patch existing row by PK. Returns the updated row, or None if no row matched.
+
+    Unlike _upsert, this issues a real UPDATE so NOT NULL columns that aren't
+    in `updates` aren't required. Used for partial patches where the row is
+    known to exist.
+    """
+    cfg = get_settings()
+    if not cfg.supabase_configured:
+        return None
+
+    cols = [k for k, v in updates.items() if v is not None]
+    if not cols:
+        return None
+
+    set_clause = ", ".join(f"{c} = %s" for c in cols)
+    compound = table in _COMPOUND_PK_TABLES
+    where = f"{pk_column} = %s" + (" AND user_id = %s" if compound else "")
+    params: list[Any] = [updates[c] for c in cols] + [pk_value]
+    if compound:
+        params.append(cfg.OWNER_ID)
+
+    sql = f"UPDATE {table} SET {set_clause} WHERE {where} RETURNING *"
+
+    try:
+        conn = _get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                row = cur.fetchone()
+                colnames = [d[0] for d in cur.description] if cur.description else []
+            conn.commit()
+            if row is None:
+                return None
+            return dict(zip(colnames, row, strict=False))
+        finally:
+            conn.close()
+    except Exception:
+        log.exception("supabase update failed for table=%s pk=%s", table, pk_value)
+        return None
+
+
 def _delete_by_pk(table: str, pk_column: str, pk_value: str) -> None:
     cfg = get_settings()
     if not cfg.supabase_configured:
