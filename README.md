@@ -44,6 +44,14 @@ Just speak naturally. Groq's LPU transcribes (Whisper) and LLaMA 3.3 categorizes
 - Savings goals with progress charts
 - Prioritized wishlist with "can I afford it?" indicators
 
+### 🧠 AI Monthly Briefing
+A narrated overview of your spending, anchored to deterministic numbers — never hallucinated.
+- **Pandas computes the math; the LLM only writes the prose.** Numbers in the narration are placeholders the frontend re-binds from real data — the model physically cannot invent a digit.
+- Trailing-3 and trailing-12 month comparisons surface trends ("dining is up sharply vs. your 3-month average").
+- Cached per month with sha256-hashed stats bundle; auto-invalidated when you edit an expense.
+- Powered by Groq `gpt-oss-120b` with primary→fallback retry on rate limits.
+> Open `/insights/monthly` and pick a month — first call ~3–6s, cached calls < 200ms.
+
 ### 🔐 BYOK (Bring Your Own Keys) Architecture
 - **Your own Supabase** — your data lives in your Postgres, not mine
 - **Your own Google Sheet** — automatic backup mirror
@@ -74,7 +82,7 @@ Just speak naturally. Groq's LPU transcribes (Whisper) and LLaMA 3.3 categorizes
 |-------|------|
 | Backend | FastAPI, Pydantic, pandas |
 | Database | Supabase (Postgres) — BYOK |
-| AI | Groq (Whisper + LLaMA 3.3 70B) |
+| AI | Groq (Whisper + Llama 3.3 70B for voice/parsing; gpt-oss-120b for analysis) |
 | Frontend | Handsontable, Chart.js, vanilla JS |
 | Storage | CSV ledger + WAL (local) / Supabase (cloud) |
 | Hosting | Vercel serverless / Self-hosted Docker |
@@ -242,6 +250,7 @@ Please open an issue first for big features.
 - [x] Supabase BYOK sync
 - [x] Google Sheets backup
 - [x] Vercel deployment
+- [x] AI monthly briefing with deterministic-stats + LLM-narration architecture
 - [ ] Multi-user with Supabase Auth + RLS
 - [ ] Mobile app (React Native)
 - [ ] Bank statement auto-import

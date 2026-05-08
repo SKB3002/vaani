@@ -80,3 +80,15 @@ These are load-bearing for review decisions:
 2. **Zero data loss.** Every write goes through WAL + atomic CSV (local) or upsert (Supabase). No exceptions.
 3. **Offline-first.** App must work without internet; cloud sync is a mirror, not a dependency.
 4. **INR-first** defaults (₹, IST, UPI/cash/online payment methods). i18n is welcome but defaults stay.
+
+## AI insights layer
+
+Two tables-deep: a deterministic stats aggregator + an LLM that only narrates.
+
+- **`app/services/insights/aggregator.py`** — `build_monthly_bundle(month, ledger) -> MonthlyStatsBundle`. Pandas reads expenses/budgets/goals/investments and produces a typed bundle with current month, previous month, trailing-3m, trailing-12m windows. `bundle_hash(bundle)` is deterministic (excludes `generated_at`).
+- **`app/services/insights/narrator.py`** — `narrate_briefing(bundle, *, llm) -> Narration | None`. Calls Groq `gpt-oss-120b` via `chat_json`. Enforces a digit-free output contract: regex `\d` over every narrative field rejects digit leaks, retries once, then raises `NarrationContractError`. Returns `None` on `LLMTransportError` (graceful degradation).
+- **`app/services/insights/cache.py`** — `InsightsCache` (CSV + Supabase dual-mode via `LedgerWriter`). Cache key composes `(kind, bundle_hash, month, prompt_version, model)` so prompt-template revisions force regeneration. `make_invalidator(cache)` is registered on `LedgerWriter.on_change` in `app/main.py` lifespan; mutations to `expenses`/`budget_rules`/`budget_table_c`/`goals_a`/`investments` invalidate; other tables are no-ops to avoid invalidation noise.
+- **`app/routers/insights.py`** — `GET /api/insights/monthly?month=YYYY-MM[&refresh=true]`. Builds bundle, checks cache, calls narrator on miss, writes payload `{month, model, prompt_version, generated_at, narration}` to cache. Empty months short-circuit before any LLM call.
+- **Frontend stat-ref re-binder** — `static/js/insights_monthly.js` mirrors `narrator.extract_allowed_stat_refs` slug rules (lowercase + non-alphanum → single `_`). Token `{{food_total}}` in prose becomes the real INR-formatted number at render time. The slug rule MUST stay in sync between Python and JS — change one, change both.
+
+The same observer pattern that drives `BudgetRunner.recompute_all()` invalidates this cache. One mutation path, three derived states (budgets, supabase mirror, insights cache).
