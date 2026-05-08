@@ -1,6 +1,39 @@
 {% extends "base.html" %}
 {% set active_page = "insights_monthly" %}
 {% block title %}Monthly Briefing · Vaani{% endblock %}
+
+{% block head %}
+<style>
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3, var(--surface-1)) 50%, var(--surface-2) 100%);
+    background-size: 200% 100%;
+    animation: ib-shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--r-3, 8px);
+  }
+  @keyframes ib-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton--headline { height: 28px; width: 60%; margin-bottom: var(--sp-2); }
+  .skeleton--text     { height: 14px; width: 100%; margin-bottom: var(--sp-1); }
+  .skeleton--text:last-child { width: 70%; }
+
+  #ib-skeleton .card { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .ib-skeleton-hint {
+    font-size: var(--fs-sm);
+    color: var(--muted, var(--text));
+    opacity: 0.8;
+    margin-bottom: var(--sp-3);
+  }
+
+  @media (max-width: 640px) {
+    .page-head { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+    .page-head .hstack { width: 100%; justify-content: space-between; }
+    #ib-month { flex: 1; min-width: 0; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="page-head">
   <div>
@@ -14,6 +47,32 @@
 </section>
 
 <div id="ib-status" class="muted" style="margin-bottom: var(--sp-3);"></div>
+
+<div id="ib-skeleton" hidden>
+  <p class="ib-skeleton-hint" id="ib-skeleton-hint">Composing your briefing…</p>
+  <div class="card" style="margin-bottom: var(--sp-3);">
+    <div class="skeleton skeleton--headline"></div>
+    <div class="skeleton skeleton--text"></div>
+  </div>
+  <div class="vstack" style="gap: var(--sp-3);">
+    <div class="card">
+      <div class="skeleton skeleton--headline" style="width:35%; height:20px;"></div>
+      <div class="skeleton skeleton--text"></div>
+      <div class="skeleton skeleton--text"></div>
+      <div class="skeleton skeleton--text"></div>
+    </div>
+    <div class="card">
+      <div class="skeleton skeleton--headline" style="width:40%; height:20px;"></div>
+      <div class="skeleton skeleton--text"></div>
+      <div class="skeleton skeleton--text"></div>
+    </div>
+    <div class="card">
+      <div class="skeleton skeleton--headline" style="width:30%; height:20px;"></div>
+      <div class="skeleton skeleton--text"></div>
+      <div class="skeleton skeleton--text"></div>
+    </div>
+  </div>
+</div>
 
 <div id="ib-banner" class="card" hidden style="margin-bottom: var(--sp-3);">
   <p id="ib-banner-text" class="muted"></p>
@@ -36,5 +95,5 @@
 {% endblock %}
 
 {% block body_end %}
-<script defer src="/static/js/insights_monthly.js?v=1"></script>
+<script defer src="/static/js/insights_monthly.js?v=2"></script>
 {% endblock %}

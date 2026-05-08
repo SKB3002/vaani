@@ -380,11 +380,25 @@
     } catch (_) { /* best-effort */ }
   }
 
+  function setSkeleton(visible) {
+    const sk = $("ib-skeleton");
+    if (sk) sk.hidden = !visible;
+    // Hide real content while skeleton is up to avoid stale flicker.
+    const ids = ["ib-headline", "ib-banner", "ib-stats-summary"];
+    ids.forEach((id) => {
+      const el = $(id);
+      if (el) el.hidden = visible ? true : el.hidden;
+    });
+    const sections = $("ib-sections");
+    if (sections && visible) sections.innerHTML = "";
+  }
+
   async function loadBriefing(month, opts) {
     opts = opts || {};
     const refresh = !!opts.refresh;
-    setStatus("Loading…");
+    setStatus("");
     showBanner(null);
+    setSkeleton(true);
 
     let resp;
     try {
@@ -392,16 +406,19 @@
       resp = await fetch(url, { headers: { Accept: "application/json" } });
     } catch (err) {
       console.error("briefing fetch failed", err);
+      setSkeleton(false);
       setStatus("Couldn't load briefing — try again.");
       return;
     }
 
     if (resp.status === 422) {
+      setSkeleton(false);
       setStatus("Invalid month. Pick a valid YYYY-MM.");
       return;
     }
     if (!resp.ok) {
       console.error("briefing http", resp.status);
+      setSkeleton(false);
       setStatus("Couldn't load briefing — try again.");
       return;
     }
@@ -411,10 +428,12 @@
       data = await resp.json();
     } catch (err) {
       console.error("briefing parse", err);
+      setSkeleton(false);
       setStatus("Couldn't read briefing response.");
       return;
     }
 
+    setSkeleton(false);
     setStatus("");
     const bundle = data.stats_bundle;
     const narration = data.narration;
