@@ -4,32 +4,170 @@
 
 {% block head %}
 <style>
+  /* ---- shimmer skeleton (reused) ---- */
   .skeleton {
     background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3, var(--surface-1)) 50%, var(--surface-2) 100%);
     background-size: 200% 100%;
     animation: ib-shimmer 1.4s ease-in-out infinite;
     border-radius: var(--r-3, 8px);
   }
-  @keyframes ib-shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  .skeleton--headline { height: 28px; width: 60%; margin-bottom: var(--sp-2); }
+  @keyframes ib-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton--headline { height: 32px; width: 60%; margin-bottom: var(--sp-2); }
   .skeleton--text     { height: 14px; width: 100%; margin-bottom: var(--sp-1); }
   .skeleton--text:last-child { width: 70%; }
-
   #ib-skeleton .card { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .ib-skeleton-hint {
-    font-size: var(--fs-sm);
-    color: var(--muted, var(--text));
-    opacity: 0.8;
-    margin-bottom: var(--sp-3);
+
+  /* ---- hero headline card ---- */
+  .ib-hero {
+    position: relative;
+    padding: var(--sp-6) var(--sp-6) var(--sp-5);
+    background: linear-gradient(135deg, var(--surface-2) 0%, var(--gold-soft) 100%);
+    border: 1px solid var(--gold-hairline);
+    border-radius: var(--r-5, 14px);
+    overflow: hidden;
+    margin-bottom: var(--sp-4);
   }
+  .ib-hero::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 4px;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--accent) 100%);
+  }
+  .ib-hero__eyebrow {
+    font-family: var(--ff-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-3, var(--muted));
+    margin-bottom: var(--sp-2);
+  }
+  .ib-hero__title {
+    font-family: var(--ff-display, serif);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    margin: 0 0 var(--sp-3);
+    color: var(--text-1, var(--text));
+  }
+  .ib-hero__pills { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+  .ib-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .ib-pill--encouraging { background: var(--success-soft); color: var(--success); border-color: var(--success-soft); }
+  .ib-pill--warning     { background: var(--warn-soft);    color: var(--warn);    border-color: var(--warn-soft); }
+  .ib-pill--neutral     { background: var(--surface-3);    color: var(--text-2, var(--muted)); }
+  .ib-pill--cache       { background: transparent; color: var(--text-3, var(--muted)); border-color: var(--border-1, var(--gold-hairline)); }
+
+  /* ---- section cards ---- */
+  .ib-section {
+    padding: var(--sp-5);
+    border: 1px solid var(--border-1, var(--gold-hairline));
+    border-radius: var(--r-4, 12px);
+    background: var(--surface-1);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .ib-section:hover { border-color: var(--gold-hairline); }
+  .ib-section__title {
+    font-family: var(--ff-display, serif);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--sp-3);
+    display: flex; align-items: center; gap: var(--sp-2);
+  }
+  .ib-section__title::before {
+    content: ""; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+  }
+  .ib-section__body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-2, var(--text));
+    margin: 0;
+  }
+
+  /* ---- numbers grid ---- */
+  .ib-numbers {
+    padding: var(--sp-5);
+    border: 1px solid var(--border-1, var(--gold-hairline));
+    border-radius: var(--r-4, 12px);
+    background: var(--surface-1);
+  }
+  .ib-numbers__title {
+    font-family: var(--ff-display, serif);
+    font-weight: 500;
+    font-size: 1.05rem;
+    margin: 0 0 var(--sp-4);
+  }
+  .ib-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--sp-3);
+  }
+  .ib-stat {
+    padding: var(--sp-3);
+    border: 1px solid var(--border-subtle, var(--gold-hairline));
+    border-radius: var(--r-3, 10px);
+    background: var(--surface-2);
+  }
+  .ib-stat__label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3, var(--muted));
+    margin-bottom: 6px;
+  }
+  .ib-stat__value {
+    font-family: var(--ff-mono);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--text-1, var(--text));
+  }
+  .ib-stat__value--positive { color: var(--success); }
+  .ib-stat__value--negative { color: var(--warn); }
+
+  .ib-subhead {
+    font-family: var(--ff-display, serif);
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: var(--sp-4) 0 var(--sp-3);
+    color: var(--text-2, var(--text));
+    border-top: 1px solid var(--border-subtle, var(--gold-hairline));
+    padding-top: var(--sp-3);
+  }
+
+  /* ---- merchant / category list rows ---- */
+  .ib-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: var(--sp-2) 0;
+    border-bottom: 1px dashed var(--border-subtle, var(--gold-hairline));
+    gap: var(--sp-3);
+  }
+  .ib-row:last-child { border-bottom: none; }
+  .ib-row__name { font-size: 0.9rem; color: var(--text-1, var(--text)); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ib-row__value { font-family: var(--ff-mono); font-weight: 500; font-size: 0.9rem; }
+  .ib-row__meta { font-size: 0.72rem; color: var(--text-3, var(--muted)); margin-left: var(--sp-2); }
+
+  /* ---- goals progress ---- */
+  .ib-goal { padding: var(--sp-3) 0; border-bottom: 1px dashed var(--border-subtle, var(--gold-hairline)); }
+  .ib-goal:last-child { border-bottom: none; }
+  .ib-goal__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: var(--sp-2); }
+  .ib-goal__name { font-size: 0.95rem; font-weight: 500; }
+  .ib-goal__pct { font-family: var(--ff-mono); font-size: 0.85rem; color: var(--gold); }
+  .ib-goal__bar { height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+  .ib-goal__fill { height: 100%; background: linear-gradient(90deg, var(--gold) 0%, var(--accent) 100%); border-radius: 3px; transition: width 0.4s ease; }
+  .ib-goal__amounts { font-family: var(--ff-mono); font-size: 0.75rem; color: var(--text-3, var(--muted)); margin-top: 4px; }
 
   @media (max-width: 640px) {
     .page-head { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
     .page-head .hstack { width: 100%; justify-content: space-between; }
     #ib-month { flex: 1; min-width: 0; }
+    .ib-hero { padding: var(--sp-5) var(--sp-4); }
   }
 </style>
 {% endblock %}
@@ -42,31 +180,25 @@
   </div>
   <div class="hstack" style="gap: var(--sp-2);">
     <input type="month" id="ib-month" class="input" style="width: 160px;" />
-    <button id="ib-regenerate" class="btn btn--ghost" type="button">Regenerate</button>
+    <button id="ib-regenerate" class="btn btn--ghost" type="button">Recompute</button>
   </div>
 </section>
 
 <div id="ib-status" class="muted" style="margin-bottom: var(--sp-3);"></div>
 
 <div id="ib-skeleton" hidden>
-  <p class="ib-skeleton-hint" id="ib-skeleton-hint">Composing your briefing…</p>
-  <div class="card" style="margin-bottom: var(--sp-3);">
+  <div class="ib-hero">
     <div class="skeleton skeleton--headline"></div>
-    <div class="skeleton skeleton--text"></div>
+    <div class="skeleton skeleton--text" style="width: 80%;"></div>
   </div>
   <div class="vstack" style="gap: var(--sp-3);">
-    <div class="card">
-      <div class="skeleton skeleton--headline" style="width:35%; height:20px;"></div>
+    <div class="ib-section">
+      <div class="skeleton skeleton--headline" style="width:30%; height:20px;"></div>
       <div class="skeleton skeleton--text"></div>
       <div class="skeleton skeleton--text"></div>
       <div class="skeleton skeleton--text"></div>
     </div>
-    <div class="card">
-      <div class="skeleton skeleton--headline" style="width:40%; height:20px;"></div>
-      <div class="skeleton skeleton--text"></div>
-      <div class="skeleton skeleton--text"></div>
-    </div>
-    <div class="card">
+    <div class="ib-section">
       <div class="skeleton skeleton--headline" style="width:30%; height:20px;"></div>
       <div class="skeleton skeleton--text"></div>
       <div class="skeleton skeleton--text"></div>
@@ -74,26 +206,33 @@
   </div>
 </div>
 
-<div id="ib-banner" class="card" hidden style="margin-bottom: var(--sp-3);">
-  <p id="ib-banner-text" class="muted"></p>
+<div id="ib-banner" class="card" hidden style="margin-bottom: var(--sp-3); border-left: 3px solid var(--warn);">
+  <p id="ib-banner-text" class="muted" style="margin: 0;"></p>
 </div>
 
-<div id="ib-headline" class="card" hidden>
-  <div class="hstack" style="gap: var(--sp-2); align-items: center;">
-    <h2 id="ib-headline-text" class="card__title" style="margin: 0;"></h2>
-    <span id="ib-tone-pill" class="chip"></span>
-    <span id="ib-cache-pill" class="chip"></span>
+<div id="ib-headline" class="ib-hero" hidden>
+  <div class="ib-hero__eyebrow">Your month at a glance</div>
+  <h2 id="ib-headline-text" class="ib-hero__title"></h2>
+  <div class="ib-hero__pills">
+    <span id="ib-tone-pill" class="ib-pill"></span>
+    <span id="ib-cache-pill" class="ib-pill ib-pill--cache"></span>
   </div>
 </div>
 
 <div id="ib-sections" class="vstack" style="gap: var(--sp-3); margin-top: var(--sp-3);"></div>
 
-<div id="ib-stats-summary" class="card" hidden style="margin-top: var(--sp-3);">
-  <h3 class="card__title">Numbers</h3>
-  <div id="ib-stats-grid" class="grid"></div>
+<div id="ib-stats-summary" class="ib-numbers" hidden style="margin-top: var(--sp-4);">
+  <h3 class="ib-numbers__title">By the numbers</h3>
+  <div id="ib-stats-top" class="ib-stat-grid"></div>
+  <h4 id="ib-cats-head" class="ib-subhead" hidden>Top categories</h4>
+  <div id="ib-cats-list"></div>
+  <h4 id="ib-merch-head" class="ib-subhead" hidden>Top merchants</h4>
+  <div id="ib-merch-list"></div>
+  <h4 id="ib-goals-head" class="ib-subhead" hidden>Goals</h4>
+  <div id="ib-goals-list"></div>
 </div>
 {% endblock %}
 
 {% block body_end %}
-<script defer src="/static/js/insights_monthly.js?v=2"></script>
+<script defer src="/static/js/insights_monthly.js?v=3"></script>
 {% endblock %}

@@ -519,8 +519,44 @@ def _compute_goal_progress(
     return out
 
 
-def _compute_net_cashflow(expenses: pd.DataFrame, start: date, end: date) -> float:
-    """Income (paid_by_someone) minus real spend over [start, end)."""
+def _compute_net_cashflow(
+    balances: pd.DataFrame,
+    expenses: pd.DataFrame,
+    start: date,
+    end: date,
+) -> float:
+    """Net cash movement over [start, end) = end_total - start_total.
+
+    Uses the `balances` table — `cash_balance + online_balance` snapshot at
+    the last asof < start, vs the last asof < end. This captures all real
+    movement (spend, income, ATM transfers, manual adjusts) in one number.
+
+    Falls back to (income - spend) from the expenses table if balances has
+    no rows covering the window — e.g. brand-new account with no balance
+    history yet.
+    """
+    if not balances.empty and "asof" in balances.columns:
+        b = balances.copy()
+        b["_asof"] = pd.to_datetime(b["asof"], errors="coerce", utc=True)
+        b = b.dropna(subset=["_asof"]).sort_values("_asof")
+        if not b.empty:
+            cash = pd.to_numeric(b["cash_balance"], errors="coerce").fillna(0.0)
+            online = pd.to_numeric(b["online_balance"], errors="coerce").fillna(0.0)
+            total = (cash + online).reset_index(drop=True)
+            asof = b["_asof"].reset_index(drop=True)
+
+            start_ts = pd.Timestamp(start, tz="UTC")
+            end_ts = pd.Timestamp(end, tz="UTC")
+
+            before_start = asof < start_ts
+            before_end = asof < end_ts
+            start_total = float(total[before_start].iloc[-1]) if before_start.any() else 0.0
+            end_total = float(total[before_end].iloc[-1]) if before_end.any() else start_total
+
+            if before_end.any():
+                return _safe_float(end_total - start_total)
+
+    # Fallback: income vs spend from expenses
     sliced = _slice_by_date(expenses, start, end)
     if sliced.empty:
         return 0.0
@@ -615,6 +651,7 @@ def build_monthly_bundle(
     table_c = ledger.read("budget_table_c")
     goals_a = ledger.read("goals_a")
     investments = ledger.read("investments")
+    balances = ledger.read("balances")
 
     current_period = compute_period_stats(
         expenses, label=month, start=cur_start, end=cur_end
@@ -640,7 +677,7 @@ def build_monthly_bundle(
 
     budget_util = _compute_budget_utilisation(budget_rules, table_c, current_period)
     goals = _compute_goal_progress(goals_a, expenses, month)
-    net_cashflow = _compute_net_cashflow(expenses, cur_start, cur_end)
+    net_cashflow = _compute_net_cashflow(balances, expenses, cur_start, cur_end)
     top_txns = _compute_largest_txns(expenses, cur_start, cur_end, n=5)
     inv_cur, inv_prev, inv_delta = _compute_investments(investments, month)
 

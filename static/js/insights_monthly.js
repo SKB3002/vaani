@@ -180,22 +180,14 @@
   };
 
   function applyToneStyle(pill, tone) {
-    pill.className = "chip";
-    // Map tones to existing token surfaces. Keep it lightweight — we don't
-    // introduce new CSS classes; we rely on inline styles using tokens.
-    if (tone === "warning") {
-      pill.style.background = "var(--warn-soft, var(--surface-2))";
-      pill.style.color = "var(--warn, var(--text))";
-    } else if (tone === "encouraging") {
-      pill.style.background = "var(--success-soft, var(--surface-2))";
-      pill.style.color = "var(--success, var(--text))";
-    } else {
-      pill.style.background = "var(--surface-2)";
-      pill.style.color = "var(--muted, var(--text))";
-    }
+    const cls = ["ib-pill"];
+    if (tone === "warning") cls.push("ib-pill--warning");
+    else if (tone === "encouraging") cls.push("ib-pill--encouraging");
+    else cls.push("ib-pill--neutral");
+    pill.className = cls.join(" ");
   }
 
-  function renderHeadline(narration, cacheHit) {
+  function renderHeadline(narration, cacheHit, refMap) {
     const card = $("ib-headline");
     const text = $("ib-headline-text");
     const pill = $("ib-tone-pill");
@@ -207,14 +199,13 @@
       return;
     }
     card.hidden = false;
-    text.textContent = narration.headline || "";
+    text.textContent = rebindRefs(narration.headline || "", refMap);
     const tone = narration.tone || "neutral";
     pill.textContent = TONE_LABEL[tone] || tone;
     applyToneStyle(pill, tone);
 
     cachePill.textContent = cacheHit ? "✓ cached" : "✦ fresh";
-    cachePill.style.background = "var(--surface-2)";
-    cachePill.style.color = "var(--muted, var(--text))";
+    cachePill.className = "ib-pill ib-pill--cache";
   }
 
   function renderSections(narration, refMap) {
@@ -225,12 +216,12 @@
 
     narration.sections.forEach((section) => {
       const card = document.createElement("section");
-      card.className = "card";
+      card.className = "ib-section";
       const title = document.createElement("h3");
-      title.className = "card__title";
+      title.className = "ib-section__title";
       title.textContent = section.title || "";
       const body = document.createElement("p");
-      body.style.margin = "0";
+      body.className = "ib-section__body";
       // Plaintext insertion via textContent after rebind keeps this XSS-safe;
       // narrator output never contains HTML by contract.
       body.textContent = rebindRefs(section.narrative || "", refMap);
@@ -242,110 +233,122 @@
 
   function renderStatsSummary(bundle) {
     const card = $("ib-stats-summary");
-    const grid = $("ib-stats-grid");
-    if (!card || !grid) return;
-    if (!bundle) {
-      card.hidden = true;
-      return;
-    }
+    const top = $("ib-stats-top");
+    const catsHead = $("ib-cats-head");
+    const catsList = $("ib-cats-list");
+    const merchHead = $("ib-merch-head");
+    const merchList = $("ib-merch-list");
+    const goalsHead = $("ib-goals-head");
+    const goalsList = $("ib-goals-list");
+    if (!card || !top) return;
+    if (!bundle) { card.hidden = true; return; }
     card.hidden = false;
-    grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(180px, 1fr))";
-    grid.style.gap = "var(--sp-3)";
-    grid.innerHTML = "";
 
     const cm = bundle.current_month || {};
-    const items = [
-      ["Month", String(bundle.month || "—")],
-      ["Total spend", fmtCurrency(cm.net_spend)],
-      ["Transactions", fmtCount(cm.txn_count)],
-      ["Net cashflow", fmtCurrency(bundle.net_cashflow)],
-      ["Previous month", fmtCurrency((bundle.previous_month || {}).net_spend)],
-      ["Investments (current)", fmtCurrency(bundle.investment_total_current)],
-    ];
+    const monthLabel = formatMonthHuman(bundle.month);
+    const cashflow = Number(bundle.net_cashflow || 0);
+    const cashflowClass = cashflow > 0
+      ? "ib-stat__value ib-stat__value--positive"
+      : cashflow < 0
+        ? "ib-stat__value ib-stat__value--negative"
+        : "ib-stat__value";
 
-    items.forEach(([label, value]) => {
-      const cell = document.createElement("div");
-      const k = document.createElement("div");
-      k.className = "muted";
-      k.style.fontSize = "0.85rem";
-      k.textContent = label;
-      const v = document.createElement("div");
-      v.style.fontWeight = "600";
-      v.textContent = value;
-      cell.appendChild(k);
-      cell.appendChild(v);
-      grid.appendChild(cell);
+    top.innerHTML = "";
+    appendStat(top, "Month", monthLabel || "—");
+    appendStat(top, "Total spend", fmtCurrency(cm.net_spend));
+    appendStat(top, "Transactions", fmtCount(cm.txn_count));
+    appendStat(top, "Net cashflow", fmtCurrency(cashflow), cashflowClass);
+    appendStat(top, "Previous month", fmtCurrency((bundle.previous_month || {}).net_spend));
+    appendStat(top, "Investments (current)", fmtCurrency(bundle.investment_total_current));
+
+    const cats = (cm.by_category || []).slice(0, 5);
+    catsHead.hidden = cats.length === 0;
+    catsList.innerHTML = "";
+    cats.forEach((c) => {
+      catsList.appendChild(rowEl(c.category, fmtCurrency(c.total), `${fmtCount(c.txn_count)} txns`));
     });
 
-    // Top categories
-    const cats = (cm.by_category || []).slice(0, 5);
-    if (cats.length) {
-      const h = document.createElement("h4");
-      h.style.gridColumn = "1 / -1";
-      h.style.margin = "var(--sp-2) 0 0";
-      h.textContent = "Top categories";
-      grid.appendChild(h);
-      cats.forEach((c) => {
-        const cell = document.createElement("div");
-        const k = document.createElement("div");
-        k.className = "muted";
-        k.style.fontSize = "0.85rem";
-        k.textContent = c.category;
-        const v = document.createElement("div");
-        v.style.fontWeight = "600";
-        v.textContent = `${fmtCurrency(c.total)} · ${fmtCount(c.txn_count)}`;
-        cell.appendChild(k);
-        cell.appendChild(v);
-        grid.appendChild(cell);
-      });
-    }
-
-    // Top merchants
     const merch = (cm.top_merchants || []).slice(0, 5);
-    if (merch.length) {
-      const h = document.createElement("h4");
-      h.style.gridColumn = "1 / -1";
-      h.style.margin = "var(--sp-2) 0 0";
-      h.textContent = "Top merchants";
-      grid.appendChild(h);
-      merch.forEach((m) => {
-        const cell = document.createElement("div");
-        const k = document.createElement("div");
-        k.className = "muted";
-        k.style.fontSize = "0.85rem";
-        k.textContent = m.name || "—";
-        const v = document.createElement("div");
-        v.style.fontWeight = "600";
-        v.textContent = `${fmtCurrency(m.total)} · ${fmtCount(m.count)}`;
-        cell.appendChild(k);
-        cell.appendChild(v);
-        grid.appendChild(cell);
-      });
-    }
+    merchHead.hidden = merch.length === 0;
+    merchList.innerHTML = "";
+    merch.forEach((m) => {
+      merchList.appendChild(rowEl(m.name || "—", fmtCurrency(m.total), `${fmtCount(m.count)} txns`));
+    });
 
-    // Goals
     const goals = bundle.goals || [];
-    if (goals.length) {
-      const h = document.createElement("h4");
-      h.style.gridColumn = "1 / -1";
-      h.style.margin = "var(--sp-2) 0 0";
-      h.textContent = "Goals";
-      grid.appendChild(h);
-      goals.forEach((g) => {
-        const cell = document.createElement("div");
-        const k = document.createElement("div");
-        k.className = "muted";
-        k.style.fontSize = "0.85rem";
-        k.textContent = g.goal_name || "—";
-        const v = document.createElement("div");
-        v.style.fontWeight = "600";
-        v.textContent = `${fmtPercent(g.pct_complete)} · ${fmtCurrency(g.current_amount)} / ${fmtCurrency(g.target_amount)}`;
-        cell.appendChild(k);
-        cell.appendChild(v);
-        grid.appendChild(cell);
-      });
-    }
+    goalsHead.hidden = goals.length === 0;
+    goalsList.innerHTML = "";
+    goals.forEach((g) => {
+      goalsList.appendChild(goalEl(g));
+    });
+  }
+
+  function appendStat(host, label, value, valueClass) {
+    const cell = document.createElement("div");
+    cell.className = "ib-stat";
+    const k = document.createElement("div");
+    k.className = "ib-stat__label";
+    k.textContent = label;
+    const v = document.createElement("div");
+    v.className = valueClass || "ib-stat__value";
+    v.textContent = value;
+    cell.appendChild(k); cell.appendChild(v);
+    host.appendChild(cell);
+  }
+
+  function rowEl(name, value, meta) {
+    const row = document.createElement("div");
+    row.className = "ib-row";
+    const n = document.createElement("div");
+    n.className = "ib-row__name";
+    n.textContent = name;
+    const right = document.createElement("div");
+    right.style.display = "flex";
+    right.style.alignItems = "baseline";
+    const v = document.createElement("span");
+    v.className = "ib-row__value";
+    v.textContent = value;
+    const m = document.createElement("span");
+    m.className = "ib-row__meta";
+    m.textContent = meta || "";
+    right.appendChild(v);
+    if (meta) right.appendChild(m);
+    row.appendChild(n); row.appendChild(right);
+    return row;
+  }
+
+  function goalEl(g) {
+    const wrap = document.createElement("div");
+    wrap.className = "ib-goal";
+    const head = document.createElement("div");
+    head.className = "ib-goal__head";
+    const name = document.createElement("span");
+    name.className = "ib-goal__name";
+    name.textContent = g.goal_name || "—";
+    const pct = document.createElement("span");
+    pct.className = "ib-goal__pct";
+    const pctNum = Math.max(0, Math.min(100, Number(g.pct_complete) || 0));
+    pct.textContent = fmtPercent(pctNum);
+    head.appendChild(name); head.appendChild(pct);
+    const bar = document.createElement("div");
+    bar.className = "ib-goal__bar";
+    const fill = document.createElement("div");
+    fill.className = "ib-goal__fill";
+    fill.style.width = `${pctNum}%`;
+    bar.appendChild(fill);
+    const amounts = document.createElement("div");
+    amounts.className = "ib-goal__amounts";
+    amounts.textContent = `${fmtCurrency(g.current_amount)} of ${fmtCurrency(g.target_amount)}`;
+    wrap.appendChild(head); wrap.appendChild(bar); wrap.appendChild(amounts);
+    return wrap;
+  }
+
+  function formatMonthHuman(ym) {
+    if (!ym) return "";
+    const [y, m] = String(ym).split("-").map(Number);
+    if (!y || !m) return String(ym);
+    const d = new Date(y, m - 1, 1);
+    return d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
   }
 
   // ---- Reason -> banner text ----------------------------------------------
@@ -441,7 +444,7 @@
     const reason = data.reason;
 
     const refMap = buildStatRefMap(bundle);
-    renderHeadline(narration, cacheHit);
+    renderHeadline(narration, cacheHit, refMap);
     renderSections(narration, refMap);
     renderStatsSummary(bundle);
 
