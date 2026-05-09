@@ -341,10 +341,108 @@
 
   // ------------------------------------------------------------------ speech recognition
 
+  // Pick the best MediaRecorder mime type the browser supports.
+  // Chrome/Firefox/Edge prefer Opus-in-WebM; Safari needs MP4.
+  function pickAudioMime() {
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4",
+      "audio/ogg;codecs=opus",
+    ];
+    if (typeof MediaRecorder === "undefined") return null;
+    for (const m of candidates) {
+      if (MediaRecorder.isTypeSupported(m)) return m;
+    }
+    return ""; // let the browser pick its default
+  }
+
+  // Upload the recorded audio blob to /api/voice/transcribe.
+  // Bounded by `timeoutMs` — if Whisper is slow, we let the caller fall back
+  // to the live-typed transcript instead of blocking the user.
+  async function whisperTranscribe(blob, mime, timeoutMs = 6000) {
+    const ext = (mime || "").includes("mp4") ? "mp4"
+              : (mime || "").includes("ogg") ? "ogg"
+              : "webm";
+    const fd = new FormData();
+    fd.append("audio", blob, `clip.${ext}`);
+    // Omit `language` → Whisper auto-detects (handles Hindi/Hinglish).
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const resp = await fetch("/api/voice/transcribe", {
+        method: "POST",
+        body: fd,
+        signal: ctrl.signal,
+      });
+      if (!resp.ok) return null;
+      const j = await resp.json().catch(() => null);
+      const text = j && typeof j.text === "string" ? j.text.trim() : "";
+      return text || null;
+    } catch (_) {
+      return null; // network error / abort → caller falls back
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   function attachWebSpeech(btn) {
     let rec = null;
     let finalText = "";
     let active = false;
+
+    // Parallel MediaRecorder for the Whisper accuracy pass.
+    let mediaStream = null;
+    let mediaRec = null;
+    let audioChunks = [];
+    let audioMime = "";
+
+    async function startMediaRecorder() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (_) {
+        return; // mic denied — Whisper pass simply won't run; browser STT still works
+      }
+      audioChunks = [];
+      audioMime = pickAudioMime() || "";
+      try {
+        mediaRec = audioMime
+          ? new MediaRecorder(mediaStream, { mimeType: audioMime })
+          : new MediaRecorder(mediaStream);
+      } catch (_) {
+        stopMediaStream();
+        return;
+      }
+      mediaRec.ondataavailable = (e) => { if (e.data && e.data.size) audioChunks.push(e.data); };
+      mediaRec.start();
+    }
+
+    function stopMediaStream() {
+      if (mediaStream) {
+        try { mediaStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+        mediaStream = null;
+      }
+    }
+
+    // Returns a Blob of the recorded audio, or null if recording wasn't running.
+    function finishMediaRecorder() {
+      return new Promise((resolve) => {
+        if (!mediaRec || mediaRec.state === "inactive") {
+          stopMediaStream();
+          resolve(null);
+          return;
+        }
+        mediaRec.onstop = () => {
+          const blob = audioChunks.length
+            ? new Blob(audioChunks, { type: audioMime || "audio/webm" })
+            : null;
+          stopMediaStream();
+          resolve(blob);
+        };
+        try { mediaRec.stop(); } catch (_) { stopMediaStream(); resolve(null); }
+      });
+    }
 
     function start() {
       if (active) return;
@@ -352,6 +450,8 @@
       finalText = "";
       setTranscript("Listening…");
       setState(btn, "recording");
+      // Kick off audio capture in parallel — best-effort, never blocks browser STT.
+      startMediaRecorder();
       try {
         rec = new SR();
         rec.lang = "en-IN";
@@ -370,23 +470,104 @@
           window.Vaani.toast({ type: "danger", title: "Mic error", message: e.error || "unknown" });
           stop();
         };
-        rec.onend = () => {
+        rec.onend = async () => {
           setState(btn, "idle");
           active = false;
-          const text = finalText.trim();
-          if (text) { setTranscript(text); submitTranscript(text); }
-          else setTranscript("");
+          const browserText = finalText.trim();
+          // Wait for the parallel recording, then ask Whisper for a cleaner pass.
+          const blob = await finishMediaRecorder();
+          let finalTranscript = browserText;
+          if (blob && blob.size > 1000) {
+            const whisperText = await whisperTranscribe(blob, audioMime);
+            if (whisperText) {
+              finalTranscript = whisperText;
+              if (whisperText !== browserText) {
+                setTranscript(whisperText); // show the corrected version
+              }
+            }
+          }
+          if (finalTranscript) {
+            setTranscript(finalTranscript);
+            submitTranscript(finalTranscript);
+          } else {
+            setTranscript("");
+          }
         };
         rec.start();
       } catch (err) {
         window.Vaani.toast({ type: "danger", title: "Voice error", message: err.message });
         setState(btn, "idle");
         active = false;
+        stopMediaStream();
       }
     }
 
     function stop() {
       if (rec && active) { try { rec.stop(); } catch (_) {} }
+    }
+
+    btn.addEventListener("mousedown",  (e) => { e.preventDefault(); start(); });
+    btn.addEventListener("touchstart", (e) => { e.preventDefault(); start(); }, { passive: false });
+    btn.addEventListener("mouseup",    () => stop());
+    btn.addEventListener("mouseleave", () => stop());
+    btn.addEventListener("touchend",   () => stop());
+    btn.addEventListener("keydown",    (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); start(); } });
+    btn.addEventListener("keyup",      (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); stop(); } });
+  }
+
+  // Whisper-only path for browsers without SpeechRecognition (Firefox, etc.).
+  // No live typing, but the user still gets accurate voice → parse.
+  function attachWhisperOnly(btn) {
+    let stream = null;
+    let recorder = null;
+    let chunks = [];
+    let mime = "";
+    let active = false;
+
+    async function start() {
+      if (active) return;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        window.Vaani.toast({ type: "danger", title: "Mic error", message: err.message });
+        return;
+      }
+      active = true;
+      chunks = [];
+      mime = pickAudioMime() || "";
+      try {
+        recorder = mime
+          ? new MediaRecorder(stream, { mimeType: mime })
+          : new MediaRecorder(stream);
+      } catch (err) {
+        active = false;
+        try { stream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+        window.Vaani.toast({ type: "danger", title: "Recorder error", message: err.message });
+        return;
+      }
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      recorder.start();
+      setTranscript("Listening…");
+      setState(btn, "recording");
+    }
+
+    function stop() {
+      if (!active || !recorder) return;
+      active = false;
+      setState(btn, "idle");
+      recorder.onstop = async () => {
+        try { stream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+        const blob = chunks.length ? new Blob(chunks, { type: mime || "audio/webm" }) : null;
+        if (!blob || blob.size < 1000) { setTranscript(""); return; }
+        setTranscript("Transcribing…");
+        const text = await whisperTranscribe(blob, mime, 15000);
+        if (text) { setTranscript(text); submitTranscript(text); }
+        else {
+          setTranscript("");
+          window.Vaani.toast({ type: "danger", title: "Transcription failed", message: "Try again." });
+        }
+      };
+      try { recorder.stop(); } catch (_) {}
     }
 
     btn.addEventListener("mousedown",  (e) => { e.preventDefault(); start(); });
@@ -415,9 +596,12 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const buttons = document.querySelectorAll(".btn--voice, [data-voice-ptt]");
+    const hasMediaRecorder = typeof MediaRecorder !== "undefined" &&
+      navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     buttons.forEach((btn) => {
-      if (SR) attachWebSpeech(btn);
-      else attachFallback(btn);
+      if (SR) attachWebSpeech(btn);              // Chrome/Edge/Safari — live typing + Whisper upgrade
+      else if (hasMediaRecorder) attachWhisperOnly(btn); // Firefox — Whisper only
+      else attachFallback(btn);                   // ancient browser → text prompt
     });
   });
 })();

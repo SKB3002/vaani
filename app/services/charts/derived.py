@@ -20,6 +20,8 @@ def add_derived_columns(df: pd.DataFrame, source: str) -> pd.DataFrame:
             for col in ("type", "category"):
                 if col not in out.columns:
                     out[col] = pd.Series(dtype="string")
+        if source == "goals_a" and "remaining" not in out.columns:
+            out["remaining"] = pd.Series(dtype="float64")
         return out
 
     out = df.copy()
@@ -30,4 +32,8 @@ def add_derived_columns(df: pd.DataFrame, source: str) -> pd.DataFrame:
             out["category"] = parts[1]
         else:
             out["category"] = pd.Series(dtype="string", index=out.index)
+    if source == "goals_a" and {"target_amount", "current_amount"}.issubset(out.columns):
+        target = pd.to_numeric(out["target_amount"], errors="coerce").fillna(0.0)
+        current = pd.to_numeric(out["current_amount"], errors="coerce").fillna(0.0)
+        out["remaining"] = (target - current).clip(lower=0.0)
     return out
