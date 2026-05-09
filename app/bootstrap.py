@@ -98,10 +98,11 @@ charts:
   - id: goal_progress
     title: "Goal Progress"
     source: goals_a
-    type: horizontal_bar
+    type: stacked_bar
     x: goal_name
-    series: [current_amount, target_amount]
+    series: [current_amount, remaining]
     format: currency
+    palette: ["--chart-investment", "--chart-grid"]
 
   - id: daily_spend_line
     title: "Daily Spend (Last 30 Days)"
