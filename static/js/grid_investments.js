@@ -61,70 +61,67 @@
     const totals = computeColumnTotals(rows, numericKeys);
     const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
 
-    // Measure actual rendered column widths from Handsontable so the footer
-    // cells line up under their respective columns (stretchH: "all" means
-    // we can't rely on the configured widths).
-    let widths = null;
-    let rowHeaderWidth = 0;
-    try {
-      if (hot) {
-        const total = hot.countCols();
-        widths = [];
-        for (let i = 0; i < total; i++) widths.push(hot.getColWidth(i));
-        const rhEl = hot.rootElement.querySelector("th.rowHeader, .ht_clone_left th, .ht_master th.htRowHeaders");
-        // Fallback: measure first row-header cell if present.
-        const firstRowHeader = hot.rootElement.querySelector(".ht_clone_left .htCore tr td, .ht_clone_left .htCore tr th");
-        const el = rhEl || firstRowHeader;
-        if (el) rowHeaderWidth = el.getBoundingClientRect().width;
-      }
-    } catch (_e) { widths = null; }
+    // Measure live widths from the master HOT header row, including the
+    // row-header gutter. This is the only way to stay aligned under
+    // stretchH:"all" + arbitrary user columns.
+    const container = document.getElementById("investments-grid");
+    const headerRow = container?.querySelector(".ht_master .htCore thead tr");
+    const headerCells = headerRow ? Array.from(headerRow.children) : [];
+    // headerCells[0] is the row-header (corner) th; the rest are data columns.
 
-    const cellHtml = (text, opts = {}) => {
-      const style = [
-        "padding: 0 8px",
-        "box-sizing: border-box",
-        "overflow: hidden",
-        "text-overflow: ellipsis",
-        "white-space: nowrap",
-        opts.width ? `width: ${opts.width}px` : "",
-        opts.weight ? `font-weight: ${opts.weight}` : "",
-        opts.align ? `text-align: ${opts.align}` : "",
-      ].filter(Boolean).join(";");
-      const cls = opts.cls || "";
-      return `<div class="${cls}" style="${style}">${text}</div>`;
-    };
-
-    // Column order in HOT: [month, ...numericKeys, total]
-    const cells = [];
-    // Row-header gutter spacer
-    if (rowHeaderWidth) {
-      cells.push(`<div style="width:${rowHeaderWidth}px;flex:0 0 ${rowHeaderWidth}px"></div>`);
-    }
-    // "Total" label under Month column
-    cells.push(cellHtml("Total", {
-      width: widths ? widths[0] : undefined,
-      cls: "kpi-label",
-      weight: "var(--fw-semi)",
-    }));
-    // Per-column totals
-    numericKeys.forEach((k, i) => {
-      cells.push(cellHtml(window.Vaani.fmtNum(totals[k] || 0), {
-        width: widths ? widths[i + 1] : undefined,
-        cls: "mono num",
+    // Build the cell value list aligned to data columns: [Month, ...numericKeys, Total]
+    const dataValues = [
+      { text: "Total", align: "left", weight: "var(--fw-semi)" },
+      ...numericKeys.map(k => ({
+        text: window.Vaani.fmtNum(totals[k] || 0),
         align: "right",
-      }));
-    });
-    // Grand total under Total column
-    cells.push(cellHtml(window.Vaani.fmtNum(grandTotal), {
-      width: widths ? widths[widths.length - 1] : undefined,
-      cls: "mono num",
-      weight: "var(--fw-semi)",
-      align: "right",
-    }));
+        cls: "mono num",
+      })),
+      {
+        text: window.Vaani.fmtNum(grandTotal),
+        align: "right",
+        weight: "var(--fw-semi)",
+        cls: "mono num",
+      },
+    ];
 
+    // If we couldn't read the header, fall back to a simple aligned row.
+    if (headerCells.length < dataValues.length + 1) {
+      footer.style.display = "grid";
+      footer.style.gap = "0";
+      footer.style.padding = "var(--sp-2) 0";
+      footer.style.gridTemplateColumns = `repeat(${dataValues.length}, 1fr)`;
+      footer.innerHTML = dataValues.map(v =>
+        `<div class="${v.cls || ""}" style="padding:0 8px;text-align:${v.align};font-weight:${v.weight || "inherit"}">${v.text}</div>`
+      ).join("");
+      return;
+    }
+
+    const cornerW = headerCells[0].getBoundingClientRect().width;
+    const dataWidths = headerCells.slice(1).map(th => th.getBoundingClientRect().width);
+
+    const parts = [];
+    parts.push(`<div style="width:${cornerW}px;flex:0 0 ${cornerW}px"></div>`);
+    dataValues.forEach((v, i) => {
+      const w = dataWidths[i] || 0;
+      const style = [
+        `width:${w}px`,
+        `flex:0 0 ${w}px`,
+        "box-sizing:border-box",
+        "padding:0 8px",
+        "overflow:hidden",
+        "text-overflow:ellipsis",
+        "white-space:nowrap",
+        `text-align:${v.align}`,
+        v.weight ? `font-weight:${v.weight}` : "",
+      ].filter(Boolean).join(";");
+      parts.push(`<div class="${v.cls || ""}" style="${style}">${v.text}</div>`);
+    });
+
+    footer.style.display = "flex";
     footer.style.gap = "0";
     footer.style.padding = "var(--sp-2) 0";
-    footer.innerHTML = cells.join("");
+    footer.innerHTML = parts.join("");
   }
 
   function buildColumns(registryCols) {
