@@ -59,13 +59,71 @@
     const footer = document.getElementById("investments-footer");
     if (!footer) return;
     const totals = computeColumnTotals(rows, numericKeys);
-    const cells = [
-      `<div class="kpi-label">Total</div>`,
-      ...numericKeys.map(k => `<div class="mono num">${window.Vaani.fmtNum(totals[k] || 0)}</div>`),
-      `<div class="mono num" style="font-weight: var(--fw-semi);">${window.Vaani.fmtNum(
-        Object.values(totals).reduce((a, b) => a + b, 0)
-      )}</div>`,
-    ];
+    const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
+
+    // Measure actual rendered column widths from Handsontable so the footer
+    // cells line up under their respective columns (stretchH: "all" means
+    // we can't rely on the configured widths).
+    let widths = null;
+    let rowHeaderWidth = 0;
+    try {
+      if (hot) {
+        const total = hot.countCols();
+        widths = [];
+        for (let i = 0; i < total; i++) widths.push(hot.getColWidth(i));
+        const rhEl = hot.rootElement.querySelector("th.rowHeader, .ht_clone_left th, .ht_master th.htRowHeaders");
+        // Fallback: measure first row-header cell if present.
+        const firstRowHeader = hot.rootElement.querySelector(".ht_clone_left .htCore tr td, .ht_clone_left .htCore tr th");
+        const el = rhEl || firstRowHeader;
+        if (el) rowHeaderWidth = el.getBoundingClientRect().width;
+      }
+    } catch (_e) { widths = null; }
+
+    const cellHtml = (text, opts = {}) => {
+      const style = [
+        "padding: 0 8px",
+        "box-sizing: border-box",
+        "overflow: hidden",
+        "text-overflow: ellipsis",
+        "white-space: nowrap",
+        opts.width ? `width: ${opts.width}px` : "",
+        opts.weight ? `font-weight: ${opts.weight}` : "",
+        opts.align ? `text-align: ${opts.align}` : "",
+      ].filter(Boolean).join(";");
+      const cls = opts.cls || "";
+      return `<div class="${cls}" style="${style}">${text}</div>`;
+    };
+
+    // Column order in HOT: [month, ...numericKeys, total]
+    const cells = [];
+    // Row-header gutter spacer
+    if (rowHeaderWidth) {
+      cells.push(`<div style="width:${rowHeaderWidth}px;flex:0 0 ${rowHeaderWidth}px"></div>`);
+    }
+    // "Total" label under Month column
+    cells.push(cellHtml("Total", {
+      width: widths ? widths[0] : undefined,
+      cls: "kpi-label",
+      weight: "var(--fw-semi)",
+    }));
+    // Per-column totals
+    numericKeys.forEach((k, i) => {
+      cells.push(cellHtml(window.Vaani.fmtNum(totals[k] || 0), {
+        width: widths ? widths[i + 1] : undefined,
+        cls: "mono num",
+        align: "right",
+      }));
+    });
+    // Grand total under Total column
+    cells.push(cellHtml(window.Vaani.fmtNum(grandTotal), {
+      width: widths ? widths[widths.length - 1] : undefined,
+      cls: "mono num",
+      weight: "var(--fw-semi)",
+      align: "right",
+    }));
+
+    footer.style.gap = "0";
+    footer.style.padding = "var(--sp-2) 0";
     footer.innerHTML = cells.join("");
   }
 
@@ -177,14 +235,19 @@
         }
       },
     });
-    renderFooter(rows, numericMeta.map(c => c.key));
     // Force two renders after paint to shake out any layout race where HOT
     // miscalculates the header clone offset and hides row 0.
     requestAnimationFrame(() => {
       try { hot.render(); } catch (_e) {}
       try { hot.scrollViewportTo({ row: 0, col: 0, verticalSnap: "top" }); } catch (_e) {}
+      renderFooter(rows, numericMeta.map(c => c.key));
     });
-    setTimeout(() => { try { hot.render(); } catch (_e) {} }, 120);
+    setTimeout(() => {
+      try { hot.render(); } catch (_e) {}
+      renderFooter(rows, numericMeta.map(c => c.key));
+    }, 120);
+    // Re-align footer on viewport resize.
+    window.addEventListener("resize", () => renderFooter(rows, numericMeta.map(c => c.key)), { passive: true });
   }
 
   // -- Add month modal --
