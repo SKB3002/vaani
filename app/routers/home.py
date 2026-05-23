@@ -93,6 +93,7 @@ def home(
         {
             "currency": settings.default_currency,
             "timezone": user_tz_name(),
+            "multi_user": settings.MULTI_USER,
             "today_str": today.isoformat(),
             "greeting": _greeting_for_hour(datetime.now().hour),
             "kpis": kpis,

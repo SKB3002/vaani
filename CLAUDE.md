@@ -66,7 +66,20 @@ Observers must never raise back into the write path; the ledger swallows excepti
 - `app/routers/` — thin FastAPI handlers, no business logic
 - `app/services/` — business logic; `budget_runner.py`, `overflow.py`, `balances.py`, `goals.py`, `llm.py` (Groq client), `imports/` (CSV/Excel mapper + dedup), `charts/` (registry + safe query DSL), `sheets/` (Google Sheets backup with retry/backoff), `prompts/` (LLM prompt templates)
 - `app/storage/` — `csv_store` (atomic write + file lock), `wal`, `supabase_store`, `schemas`, `user_columns` (custom-column migration support)
-- `app/middleware/auth.py` — `PasswordGateMiddleware` only mounts when `FINEYE_APP_PASSWORD` is set (Vercel deployments)
+- `app/middleware/auth.py` — `PasswordGateMiddleware` (legacy single-shared-password gate) when `FINEYE_APP_PASSWORD` is set; `AuthMiddleware` + `make_multi_user_router()` (per-account signup/login) when `FINEYE_MULTI_USER=true`. The two modes are mutually exclusive — see "Multi-user (trial tier)" below.
+
+### Multi-user (trial tier)
+
+`FINEYE_MULTI_USER=true` activates a hosted trial mode: per-account email+password signup, request-scoped data isolation, and a consent notice on signup acknowledging that data lives on the central Supabase. Requires `FINEYE_SECRET_KEY` and a configured Supabase backend. Local CSV / single-user mode is unchanged — multi-user is a separate tier for review demos, not a replacement for the offline-first product principle.
+
+The implementation is small because partitioning was already in the schema:
+
+- `app/context.py` carries a `ContextVar[current_user_id]` set by `AuthMiddleware` on every request. ContextVars copy into the worker thread for sync endpoints, so the storage layer, post-commit observers (budget recompute, insights invalidation), and any nested service call all see the same id.
+- `app/storage/supabase_store.py` and `app/services/budget_runner.py` read `current_user_id()` instead of `settings.OWNER_ID`. `InsightsCache._owner_id` is now a property reading the same contextvar.
+- Accounts live in a new `users` table (`sql/003_users.sql`). Password hashing is PBKDF2-HMAC-SHA256 (stdlib, no native deps — Vercel-friendly). Sessions are signed cookies via `itsdangerous`.
+- `_delete_by_pk` now always filters by `user_id` (not just compound-PK tables), closing a cross-user delete-by-id risk for the single-PK tables.
+
+When `MULTI_USER` is off, every code path falls back to `settings.OWNER_ID` exactly as before — the contextvar stays unset and `current_user_id()` returns the global id. So all existing tests and the offline CSV path keep working without modification.
 
 ### Strict-typed modules
 

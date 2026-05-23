@@ -128,7 +128,18 @@ class InsightsCache:
     ) -> None:
         self._ledger = ledger
         self._ttl = timedelta(days=int(ttl_days))
-        self._owner_id = owner_id
+        # Retained as a fallback only — actual scoping is per-request via the
+        # contextvar (see ``_owner``). Tests that need a fixed owner can rely
+        # on this default by never setting the contextvar.
+        self._default_owner_id = owner_id
+
+    @property
+    def _owner_id(self) -> str:
+        """Resolve the active owner id, preferring the request-scoped value."""
+        from app.context import current_user_id
+
+        uid = current_user_id()
+        return uid or self._default_owner_id
 
     # ---- read --------------------------------------------------------------
 

@@ -170,9 +170,9 @@ class BudgetRunner:
         records = [r.model_dump() for r in rows] if rows else []
 
         if supabase_mode:
-            from app.config import get_settings as _gs
+            from app.context import current_user_id
             from app.storage.supabase_store import _delete_where, _upsert
-            uid = _gs().OWNER_ID
+            uid = current_user_id()
             _delete_where("budget_table_c", "user_id", uid)
             for rec in records:
                 _upsert("budget_table_c", rec)
@@ -195,9 +195,9 @@ class BudgetRunner:
         records = [s.model_dump() for s in states] if states else []
 
         if supabase_mode:
-            from app.config import get_settings as _gs
+            from app.context import current_user_id
             from app.storage.supabase_store import _delete_where, _upsert
-            uid = _gs().OWNER_ID
+            uid = current_user_id()
             _delete_where("budget_state", "user_id", uid)
             for rec in records:
                 _upsert("budget_state", rec)

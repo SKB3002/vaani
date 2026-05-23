@@ -681,7 +681,12 @@ def build_monthly_bundle(
     top_txns = _compute_largest_txns(expenses, cur_start, cur_end, n=5)
     inv_cur, inv_prev, inv_delta = _compute_investments(investments, month)
 
-    resolved_owner = owner_id if owner_id is not None else get_settings().OWNER_ID
+    if owner_id is not None:
+        resolved_owner = owner_id
+    else:
+        from app.context import current_user_id
+
+        resolved_owner = current_user_id()
 
     return MonthlyStatsBundle(
         month=month,

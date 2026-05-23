@@ -12,7 +12,12 @@ from fastapi.staticfiles import StaticFiles
 from app.bootstrap import bootstrap
 from app.config import get_settings
 from app.deps import get_budget_runner, get_insights_cache, get_ledger
-from app.middleware.auth import PasswordGateMiddleware, make_login_router
+from app.middleware.auth import (
+    AuthMiddleware,
+    PasswordGateMiddleware,
+    make_login_router,
+    make_multi_user_router,
+)
 from app.routers import (
     balances,
     budgets,
@@ -124,8 +129,27 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Password gate — only active when APP_PASSWORD is set (Vercel deployment)
-    if cfg.APP_PASSWORD:
+    # Auth — three exclusive modes:
+    #   1. MULTI_USER=true     → per-account signup/login, request-scoped user id.
+    #                            Requires Supabase (accounts live in the users table).
+    #   2. APP_PASSWORD set    → legacy single-shared-password gate.
+    #   3. Neither             → open (local dev).
+    if cfg.MULTI_USER:
+        if not cfg.supabase_configured:
+            logger.error(
+                "FINEYE_MULTI_USER=true requires a configured Supabase backend "
+                "(set DB_HOST, DB_PASSWORD, etc.). Falling back to open mode."
+            )
+        else:
+            if not cfg.SECRET_KEY:
+                logger.warning(
+                    "FINEYE_MULTI_USER=true but FINEYE_SECRET_KEY is empty. "
+                    "Falling back to a derived key — set a strong SECRET_KEY in "
+                    "production so session cookies survive credential rotation."
+                )
+            app.add_middleware(AuthMiddleware)
+            app.include_router(make_multi_user_router())
+    elif cfg.APP_PASSWORD:
         app.add_middleware(PasswordGateMiddleware, password=cfg.APP_PASSWORD)
         app.include_router(make_login_router())
 

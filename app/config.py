@@ -81,6 +81,16 @@ class Settings(BaseSettings):
     # Simple password protecting the app on Vercel (empty = no protection)
     APP_PASSWORD: str = Field(default="", validation_alias="FINEYE_APP_PASSWORD")
 
+    # Multi-user mode — when true, mounts signup/login flow and scopes every
+    # Supabase read/write to the logged-in user instead of OWNER_ID. Requires
+    # a configured Supabase backend (accounts can't live in single-user CSVs).
+    MULTI_USER: bool = Field(default=False, validation_alias="FINEYE_MULTI_USER")
+
+    # Secret used to sign session cookies in multi-user mode. Required when
+    # MULTI_USER=true; an empty value falls back to a deterministic-but-weak
+    # derivation so local dev works, with a warning logged at startup.
+    SECRET_KEY: str = Field(default="", validation_alias="FINEYE_SECRET_KEY")
+
     @property
     def supabase_dsn(self) -> str:
         return (

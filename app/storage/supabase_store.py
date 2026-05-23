@@ -25,6 +25,7 @@ import psycopg2
 from psycopg2 import pool as _pg_pool
 
 from app.config import get_settings
+from app.context import current_user_id
 
 log = logging.getLogger("vaani.supabase")
 
@@ -119,7 +120,7 @@ def _upsert(table: str, row: dict[str, Any]) -> None:
     if not cfg.supabase_configured:
         return
 
-    row = _inject_user_id(row, cfg.OWNER_ID)
+    row = _inject_user_id(row, current_user_id())
     conflict_cols = _CONFLICT_COLS.get(table, ["id"])
 
     # Only include columns that have non-None values; preserves Postgres defaults
@@ -173,7 +174,7 @@ def _update_by_pk(
     where = f"{pk_column} = %s" + (" AND user_id = %s" if compound else "")
     params: list[Any] = [updates[c] for c in cols] + [pk_value]
     if compound:
-        params.append(cfg.OWNER_ID)
+        params.append(current_user_id())
 
     sql = f"UPDATE {table} SET {set_clause} WHERE {where} RETURNING *"
 
@@ -199,10 +200,10 @@ def _delete_by_pk(table: str, pk_column: str, pk_value: str) -> None:
 
     if table in _COMPOUND_PK_TABLES:
         sql = f"DELETE FROM {table} WHERE user_id = %s AND {pk_column} = %s"
-        params: list[Any] = [cfg.OWNER_ID, pk_value]
+        params: list[Any] = [current_user_id(), pk_value]
     else:
-        sql = f"DELETE FROM {table} WHERE {pk_column} = %s"
-        params = [pk_value]
+        sql = f"DELETE FROM {table} WHERE user_id = %s AND {pk_column} = %s"
+        params = [current_user_id(), pk_value]
 
     try:
         with _conn_ctx() as conn:
@@ -222,7 +223,7 @@ def _delete_where(table: str, column: str, value: Any) -> None:
     try:
         with _conn_ctx() as conn:
             with conn.cursor() as cur:
-                cur.execute(sql, [cfg.OWNER_ID, value])
+                cur.execute(sql, [current_user_id(), value])
             conn.commit()
     except Exception:
         log.exception("supabase delete_where failed for table=%s col=%s", table, column)
@@ -258,7 +259,7 @@ def read_table(table: str) -> "pd.DataFrame":
     try:
         with _conn_ctx() as conn:
             with conn.cursor() as cur:
-                cur.execute(sql, [cfg.OWNER_ID])
+                cur.execute(sql, [current_user_id()])
                 rows = cur.fetchall()
 
         if not rows:
@@ -306,6 +307,67 @@ def supabase_observer(event: dict[str, Any]) -> None:
         val = event.get("value")
         if col:
             _delete_where(table, col, val)
+
+
+# ---------------------------------------------------------------------------
+# users table — multi-user accounts
+#
+# Lives here (next to the data tables) so all SQL stays in one module and
+# uses the same connection pool. Not part of ``SCHEMAS`` because users are
+# auth infrastructure rather than user-owned data — they have no CSV mirror
+# and never participate in the LedgerWriter / observer flow.
+# ---------------------------------------------------------------------------
+
+
+def create_user(*, email: str, password_hash: str, consented: bool) -> str:
+    """Insert a new user row and return the generated UUID as a string."""
+    sql = (
+        "INSERT INTO users (email, password_hash, consent_at) "
+        "VALUES (%s, %s, CASE WHEN %s THEN now() ELSE NULL END) "
+        "RETURNING id"
+    )
+    with _conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, [email, password_hash, consented])
+            row = cur.fetchone()
+        conn.commit()
+    if row is None:
+        raise RuntimeError("create_user: INSERT returned no row")
+    return str(row[0])
+
+
+def get_user_by_email(email: str) -> dict[str, Any] | None:
+    """Fetch a user row by canonical (lowercased) email, or ``None``."""
+    sql = "SELECT id, email, password_hash, created_at, consent_at FROM users WHERE email = %s"
+    try:
+        with _conn_ctx() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, [email])
+                row = cur.fetchone()
+                cols = [d[0] for d in cur.description] if cur.description else []
+    except Exception:
+        log.exception("get_user_by_email failed")
+        return None
+    if row is None:
+        return None
+    return dict(zip(cols, row, strict=False))
+
+
+def get_user_by_id(user_id: str) -> dict[str, Any] | None:
+    """Fetch a user row by id, or ``None`` if not found."""
+    sql = "SELECT id, email, created_at, consent_at FROM users WHERE id = %s"
+    try:
+        with _conn_ctx() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, [user_id])
+                row = cur.fetchone()
+                cols = [d[0] for d in cur.description] if cur.description else []
+    except Exception:
+        log.exception("get_user_by_id failed")
+        return None
+    if row is None:
+        return None
+    return dict(zip(cols, row, strict=False))
 
 
 def bulk_upsert(table: str, rows: list[dict[str, Any]]) -> int:

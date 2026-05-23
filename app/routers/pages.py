@@ -25,6 +25,7 @@ def _ctx(request: Request, **extra: Any) -> dict[str, Any]:
     ctx: dict[str, Any] = {
         "currency": settings.default_currency,
         "timezone": settings.default_timezone,
+        "multi_user": settings.MULTI_USER,
         "settings": {
             "currency": settings.default_currency,
             "timezone": settings.default_timezone,
