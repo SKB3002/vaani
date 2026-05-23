@@ -1,7 +1,9 @@
 """Budget rules, caps, and Table C endpoints."""
 from __future__ import annotations
 
+import errno
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,8 @@ from app.models.budget import BudgetAdjustIn, BudgetRuleIn, BudgetRulePatch, Cap
 from app.services import uniques as uniques_store
 from app.services.budget_runner import BudgetRunner, RunSummary
 from app.services.ledger import LedgerWriter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/budgets", tags=["budgets"])
 
@@ -31,12 +35,22 @@ def _load_meta() -> dict[str, Any]:
 
 
 def _save_meta(data: dict[str, Any]) -> None:
-    from app.config import get_settings
-    if get_settings().STORAGE_BACKEND == "supabase":
-        return  # read-only filesystem on Vercel; caps not persisted in supabase mode
+    """Persist meta.json to disk.
+
+    Previously this short-circuited whenever STORAGE_BACKEND==supabase,
+    assuming any supabase deployment ran on Vercel's read-only filesystem.
+    That broke caps persistence for local supabase setups. Now we always
+    attempt the write and only swallow EROFS (the actual Vercel symptom).
+    """
     path = _meta_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as e:
+        if getattr(e, "errno", None) == errno.EROFS:
+            logger.warning("meta.json not persisted (read-only filesystem): %s", path)
+            return
+        raise
 
 
 def _df_records(df: Any) -> list[dict[str, Any]]:

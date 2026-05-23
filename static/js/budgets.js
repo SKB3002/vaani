@@ -3,12 +3,39 @@
   "use strict";
   const { api, toast } = window.Vaani;
 
+  function ensureRulesTable() {
+    // If the server rendered the empty-state (no rules at first paint) the
+    // table doesn't exist yet. Build a fresh table inside the rules card so
+    // the JS refresh path always has a tbody to fill.
+    let tbody = document.querySelector(".card table.table tbody");
+    if (tbody) return tbody;
+    const card = document.querySelector(".card");
+    if (!card) return null;
+    // Strip any existing empty-state node.
+    const empty = card.querySelector(".empty-state, [class*='empty']");
+    if (empty) empty.remove();
+    const table = document.createElement("table");
+    table.className = "table";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="num">Monthly budget</th>
+          <th class="num">Carry cap</th>
+          <th class="num">Priority</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    card.appendChild(table);
+    return table.querySelector("tbody");
+  }
+
   async function refreshRules() {
     try {
       const rules = await api("/api/budgets/rules");
-      // Simple re-render: reload page to pick up server-rendered rows.
-      // For an interactive experience, we swap in-place.
-      const tbody = document.querySelector(".card table.table tbody");
+      const tbody = ensureRulesTable();
       if (!tbody) return;
       tbody.innerHTML = "";
       for (const r of rules) {
@@ -19,12 +46,16 @@
           <td class="num mono">${Number(r.carry_cap || 0).toFixed(2)}</td>
           <td class="num mono">${r.priority ?? 100}</td>
           <td class="right" style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
-            <button class="btn btn--ghost btn--sm" data-edit="${escapeHtml(r.category)}">Edit</button>
+            <button class="btn btn--primary btn--sm" data-set-budget="${escapeHtml(r.category)}">Set budget</button>
+            <button class="btn btn--ghost btn--sm" data-edit="${escapeHtml(r.category)}">Edit all</button>
             <button class="btn btn--ghost btn--sm" data-del="${escapeHtml(r.category)}">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
       }
+      tbody.querySelectorAll("[data-set-budget]").forEach((btn) => {
+        btn.addEventListener("click", () => setBudget(btn.dataset.setBudget));
+      });
       tbody.querySelectorAll("[data-del]").forEach((btn) => {
         btn.addEventListener("click", () => deleteRule(btn.dataset.del));
       });
@@ -33,6 +64,32 @@
       });
     } catch (e) {
       toast({ type: "danger", title: "Refresh failed", message: e.message });
+    }
+  }
+
+  async function setBudget(category) {
+    // Single-prompt shortcut: just the monthly budget. Carry cap and
+    // priority stay untouched. This is the "set my Medical budget" path.
+    const rules = await api("/api/budgets/rules");
+    const existing = rules.find((r) => r.category === category);
+    if (!existing) return;
+    const cur = Number(existing.monthly_budget || 0);
+    const mb = prompt(`Monthly budget for "${category}":\n(currently ₹${cur.toFixed(2)})`, cur);
+    if (mb === null) return;
+    const amount = Number(mb);
+    if (!Number.isFinite(amount) || amount < 0) {
+      toast({ type: "danger", message: "Enter a non-negative number" });
+      return;
+    }
+    try {
+      await api(`/api/budgets/rules/${encodeURIComponent(category)}`, {
+        method: "PATCH",
+        body: { monthly_budget: amount },
+      });
+      toast({ type: "success", message: `Budget for ${category} set to ₹${amount.toFixed(2)}` });
+      refreshRules();
+    } catch (e) {
+      toast({ type: "danger", title: "Save failed", message: e.message });
     }
   }
 

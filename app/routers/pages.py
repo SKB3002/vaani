@@ -74,9 +74,27 @@ def goals_sources_page(request: Request) -> HTMLResponse:
 
 @router.get("/budgets", response_class=HTMLResponse)
 def budgets_page(request: Request) -> HTMLResponse:
-    caps = {"medical_upper_cap": 10000, "emergency_monthly_cap": 5000}
+    # Load rules from the ledger so the page server-renders the table on
+    # first paint (avoids the empty-state-then-flash-fill JS dance).
+    from app.deps import get_ledger
+    from app.routers.budgets import _load_meta
+
+    rules: list[dict[str, Any]] = []
+    try:
+        df = get_ledger().read("budget_rules")
+        if not df.empty:
+            df = df.sort_values(["priority", "category"], kind="stable")
+            rules = df.astype(object).where(df.notna(), None).to_dict(orient="records")
+    except Exception:
+        rules = []
+
+    caps_data = _load_meta().get("caps") or {}
+    caps = {
+        "medical_upper_cap": float(caps_data.get("medical_upper_cap", 10000)),
+        "emergency_monthly_cap": float(caps_data.get("emergency_monthly_cap", 5000)),
+    }
     return templates.TemplateResponse(
-        request, "budgets.html", _ctx(request, budget_rules=[], caps=caps)
+        request, "budgets.html", _ctx(request, budget_rules=rules, caps=caps)
     )
 
 
