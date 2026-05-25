@@ -223,8 +223,9 @@ _LOGIN_HTML = """\
 
 _PUBLIC_PREFIXES = ("/login", "/static", "/health")
 
-# Public paths for multi-user mode (signup is added vs single-user).
+# Public paths for multi-user mode (signup + landing are added vs single-user).
 _MULTI_USER_PUBLIC_PREFIXES = (
+    "/welcome",
     "/login",
     "/signup",
     "/logout",
@@ -329,6 +330,10 @@ def make_login_router():  # type: ignore[return]
 
 
 MULTI_USER_COOKIE_NAME = "vaani_user"
+# Companion non-httponly "presence" cookie so client-side JS can tell the user
+# is signed in (e.g. to reveal the logout button) without exposing the signed
+# session token. Carries no security value — just a sentinel.
+MULTI_USER_PRESENCE_COOKIE = "vaani_logged_in"
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -347,7 +352,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         token = request.cookies.get(MULTI_USER_COOKIE_NAME, "")
         user_id = read_session_token(token, max_age_seconds=_SESSION_MAX_AGE)
         if not user_id:
-            return RedirectResponse("/login", status_code=302)
+            # Unauth visitors hit the landing page first (pitch + features),
+            # then click through to /login or /signup themselves.
+            return RedirectResponse("/welcome", status_code=302)
 
         # Stash the id for templates / handlers that want to render the
         # signed-in user's email without re-validating the cookie.
@@ -388,14 +395,31 @@ _AUTH_PAGE_STYLE = """
       padding: 2.5rem 2.5rem 2rem; width: 100%; max-width: 380px;
       box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(14,165,233,0.08);
     }
+    .back {
+      position: absolute; top: 1.3rem; left: 1.3rem; z-index: 2;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: #94a3b8; text-decoration: none; font-size: 0.82rem;
+      padding: 0.4rem 0.7rem; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .back:hover { color: #f1f5f9; border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.03); }
     .logo { display: flex; align-items: center; gap: 0.6rem;
-      justify-content: center; margin-bottom: 0.5rem; }
-    .logo__dot { width: 10px; height: 10px; border-radius: 50%;
-      background: #0ea5e9; box-shadow: 0 0 12px #0ea5e9aa; }
+      justify-content: center; margin-bottom: 0.55rem; }
+    .logo__dot { width: 11px; height: 11px; border-radius: 50%;
+      background: #0ea5e9; box-shadow: 0 0 14px rgba(14,165,233,0.7);
+      animation: vaani-pulse 1.8s ease-in-out infinite; }
+    @keyframes vaani-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     .logo__name { font-family: "Fraunces", Georgia, serif; font-size: 2rem;
       font-weight: 400; letter-spacing: -0.02em; color: #f1f5f9; line-height: 1; }
     .tagline { text-align: center; font-size: 0.78rem; color: #64748b;
       letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.75rem; }
+    .accent-strip {
+      height: 2px; width: 38px; margin: 0 auto 1.5rem;
+      background: linear-gradient(90deg, transparent, #0ea5e9, #6366f1, transparent);
+      border-radius: 999px;
+    }
     label { display: block; font-size: 0.72rem; font-weight: 600;
       letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;
       margin-bottom: 0.4rem; }
@@ -437,6 +461,15 @@ _AUTH_PAGE_STYLE = """
       margin-top: 1.5rem; }
 """
 
+_BACK_LINK = (
+    '<a href="/welcome" class="back" aria-label="Back to Vaani">'
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    '<line x1="19" y1="12" x2="5" y2="12"/>'
+    '<polyline points="12 19 5 12 12 5"/></svg>'
+    "Back</a>"
+)
+
 _SIGNUP_HTML = """\
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -444,13 +477,15 @@ _SIGNUP_HTML = """\
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,300&family=Inter+Tight:wght@400;500;600&display=swap">
 <style>__STYLE__</style></head><body>
+__BACK__
 <div class="card">
   <div class="logo"><span class="logo__dot"></span><span class="logo__name">Vaani</span></div>
-  <p class="tagline">Create your trial account</p>
+  <p class="tagline">Create your account</p>
+  <div class="accent-strip"></div>
   <form method="post" action="/signup">
     <div class="field">
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" value="__EMAIL__" required>
+      <input type="email" id="email" name="email" placeholder="you@example.com" value="__EMAIL__" required autofocus>
     </div>
     <div class="field">
       <label for="pw">Password</label>
@@ -474,13 +509,15 @@ _MULTI_LOGIN_HTML = """\
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,300&family=Inter+Tight:wght@400;500;600&display=swap">
 <style>__STYLE__</style></head><body>
+__BACK__
 <div class="card">
   <div class="logo"><span class="logo__dot"></span><span class="logo__name">Vaani</span></div>
-  <p class="tagline">Sign in to your account</p>
+  <p class="tagline">Welcome back</p>
+  <div class="accent-strip"></div>
   <form method="post" action="/login">
     <div class="field">
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" value="__EMAIL__" required>
+      <input type="email" id="email" name="email" placeholder="you@example.com" value="__EMAIL__" required autofocus>
     </div>
     <div class="field">
       <label for="pw">Password</label>
@@ -499,6 +536,7 @@ def _render_auth_page(template: str, *, email: str = "", error: str = "") -> str
     return (
         template
         .replace("__STYLE__", _AUTH_PAGE_STYLE)
+        .replace("__BACK__", _BACK_LINK)
         .replace("__EMAIL__", _escape(email))
         .replace("__ERROR__", err_block)
     )
@@ -537,6 +575,18 @@ def make_multi_user_router():  # type: ignore[no-untyped-def]
             token,
             httponly=True,
             secure=True,  # Vercel is always HTTPS; harmless on http://localhost during dev
+            samesite="lax",
+            max_age=_SESSION_MAX_AGE,
+            path="/",
+        )
+        # Non-httponly sentinel so the topbar can show the sign-out button.
+        # The value is meaningless; the browser dropping it just means the
+        # logout icon stops appearing — auth itself is unaffected.
+        response.set_cookie(
+            MULTI_USER_PRESENCE_COOKIE,
+            "1",
+            httponly=False,
+            secure=True,
             samesite="lax",
             max_age=_SESSION_MAX_AGE,
             path="/",
@@ -604,8 +654,9 @@ def make_multi_user_router():  # type: ignore[no-untyped-def]
 
     @router.get("/logout", include_in_schema=False)
     async def logout() -> Response:
-        response = RedirectResponse("/login", status_code=302)
+        response = RedirectResponse("/welcome", status_code=302)
         response.delete_cookie(MULTI_USER_COOKIE_NAME, path="/")
+        response.delete_cookie(MULTI_USER_PRESENCE_COOKIE, path="/")
         return response
 
     return router

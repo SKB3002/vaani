@@ -31,6 +31,7 @@ from app.routers import (
     imports,
     insights,
     investments,
+    landing,
     pages,
     reports,
     settings,
@@ -154,6 +155,7 @@ def create_app() -> FastAPI:
         app.include_router(make_login_router())
 
     app.include_router(health.router)
+    app.include_router(landing.router)
     app.include_router(home.router)
     app.include_router(expenses.router)
     app.include_router(balances.router)
