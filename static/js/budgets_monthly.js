@@ -15,6 +15,38 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
 
+  // tag (lowercased) -> "Need" | "Want" | "Investment", from /api/budgets/tags.
+  // Lets us roll a custom-tag Table C row up into its parent type group.
+  let tagTypes = {};
+  async function loadTagTypes() {
+    try {
+      const res = await api("/api/budgets/tags");
+      const out = {};
+      (res.items || []).forEach((it) => {
+        if (it && it.name && it.type) out[String(it.name).toLowerCase()] = it.type;
+      });
+      tagTypes = out;
+    } catch (_e) {
+      tagTypes = {};
+    }
+  }
+
+  // Resolve a Table C category to its parent type for grouping.
+  // Built-in "Type, Category" rows carry the type in the prefix; custom-tag rows
+  // look it up in tagTypes. Anything unclassified falls into "Other".
+  function typeOf(category) {
+    const c = String(category || "");
+    const idx = c.indexOf(", ");
+    if (idx > 0) {
+      const pre = c.slice(0, idx);
+      if (pre === "Need" || pre === "Want" || pre === "Investment") return pre;
+    }
+    return tagTypes[c.toLowerCase()] || "Other";
+  }
+
+  const GROUP_ORDER = ["Need", "Want", "Investment", "Other"];
+  const GROUP_LABEL = { Need: "Needs", Want: "Wants", Investment: "Investments", Other: "Other" };
+
   function fmt(n) {
     if (n == null || Number.isNaN(Number(n))) return "—";
     try { return fmtNum ? fmtNum(Number(n)) : Number(n).toFixed(2); } catch { return String(n); }
@@ -28,7 +60,13 @@
     }
     emptyEl.hidden = true;
     const warnings = [];
-    for (const r of rows) {
+
+    // Group rows by parent type so spend rolls up into Needs / Wants / etc.
+    const groups = {};
+    for (const r of rows) groups[typeOf(r.category)] = (groups[typeOf(r.category)] || []).concat([r]);
+    const orderedTypes = GROUP_ORDER.filter((t) => groups[t] && groups[t].length);
+
+    function dataRow(r) {
       const over = Number(r.actual) > Number(r.budget) + Number(r.budget) * 0; // compare to budget_effective approximated as budget+carry
       const heavyEmerg = Number(r.to_emergency) > 0;
       const tr = document.createElement("tr");
@@ -39,7 +77,7 @@
         warnings.push(`${r.category}: ${notesText}`);
       }
       tr.innerHTML = `
-        <td>${escapeHtml(r.category)}</td>
+        <td style="padding-left: var(--sp-4);">${escapeHtml(r.category)}</td>
         <td class="num mono">${fmt(r.budget)}</td>
         <td class="num mono">${fmt(r.actual)}</td>
         <td class="num mono">${fmt(r.remaining)}</td>
@@ -52,7 +90,33 @@
         <td class="muted" style="font-size: var(--fs-xs);">${escapeHtml(notesText)}</td>
         <td><button type="button" class="btn btn--ghost btn--sm bc-adjust-btn" data-category="${escapeHtml(r.category)}">Adjust</button></td>
       `;
-      rowsEl.appendChild(tr);
+      return tr;
+    }
+
+    function groupHeader(type, list) {
+      const sum = (k) => list.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+      const tr = document.createElement("tr");
+      tr.className = "bc-group-row";
+      tr.style.fontWeight = "600";
+      tr.style.background = "var(--surface-2, rgba(127,127,127,0.07))";
+      tr.innerHTML = `
+        <td>${escapeHtml(GROUP_LABEL[type] || type)}</td>
+        <td class="num mono">${fmt(sum("budget"))}</td>
+        <td class="num mono">${fmt(sum("actual"))}</td>
+        <td class="num mono">${fmt(sum("remaining"))}</td>
+        <td class="num mono">${fmt(sum("carry_buffer"))}</td>
+        <td class="num mono">${fmt(sum("overflow"))}</td>
+        <td class="num mono">${fmt(sum("to_medical"))}</td>
+        <td class="num mono">${fmt(sum("to_emergency"))}</td>
+        <td></td><td></td><td></td><td></td>
+      `;
+      return tr;
+    }
+
+    for (const type of orderedTypes) {
+      const list = groups[type];
+      rowsEl.appendChild(groupHeader(type, list));
+      for (const r of list) rowsEl.appendChild(dataRow(r));
     }
     if (warnings.length) {
       warnWrap.hidden = false;
@@ -71,7 +135,10 @@
   async function load() {
     const month = monthInput.value;
     try {
-      const res = await api(`/api/budgets/table-c?month=${encodeURIComponent(month)}`);
+      const [res] = await Promise.all([
+        api(`/api/budgets/table-c?month=${encodeURIComponent(month)}`),
+        loadTagTypes(),
+      ]);
       render(res.rows || []);
     } catch (e) {
       toast({ type: "danger", title: "Load failed", message: e.message });

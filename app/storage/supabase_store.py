@@ -19,13 +19,14 @@ import logging
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
-
-import psycopg2
-from psycopg2 import pool as _pg_pool
+from typing import TYPE_CHECKING, Any
 
 from app.config import get_settings
 from app.context import current_user_id
+
+if TYPE_CHECKING:
+    import psycopg2
+    from psycopg2 import pool as _pg_pool
 
 log = logging.getLogger("vaani.supabase")
 
@@ -45,6 +46,9 @@ def _ensure_pool() -> _pg_pool.ThreadedConnectionPool | None:
     cfg = get_settings()
     if not cfg.supabase_configured:
         return None
+    # Imported lazily so CSV-mode runtimes (and tests) never need the native
+    # psycopg2 DLL — see the module docstring's "cheap import time" note.
+    from psycopg2 import pool as _pg_pool
     with _POOL_LOCK:
         if _POOL is None:
             _POOL = _pg_pool.ThreadedConnectionPool(
@@ -54,7 +58,7 @@ def _ensure_pool() -> _pg_pool.ThreadedConnectionPool | None:
 
 
 @contextmanager
-def _conn_ctx() -> Iterator["psycopg2.extensions.connection"]:
+def _conn_ctx() -> Iterator[psycopg2.extensions.connection]:
     """Check out a connection from the pool; return it on exit.
 
     On any exception the connection is discarded (closed) instead of returned,
@@ -101,11 +105,12 @@ _COMPOUND_PK_TABLES: set[str] = {
 }
 
 
-def _get_conn() -> "psycopg2.extensions.connection":
+def _get_conn() -> psycopg2.extensions.connection:
     """Direct connection (no pool). Kept for tests / migration scripts that
     want a dedicated connection. Production code should use _conn_ctx instead.
     """
     cfg = get_settings()
+    import psycopg2  # lazy — keep the native DLL off the CSV-mode import path
     return psycopg2.connect(cfg.supabase_dsn)
 
 
@@ -229,7 +234,7 @@ def _delete_where(table: str, column: str, value: Any) -> None:
         log.exception("supabase delete_where failed for table=%s col=%s", table, column)
 
 
-def read_table(table: str) -> "pd.DataFrame":
+def read_table(table: str) -> pd.DataFrame:
     """Read all rows for the current owner from Supabase, returned as a DataFrame.
 
     Used by LedgerWriter.read() when STORAGE_BACKEND=supabase (Vercel).
@@ -280,7 +285,7 @@ def read_table(table: str) -> "pd.DataFrame":
         return _empty_frame(schema)
 
 
-def _empty_frame(schema: "Any") -> "pd.DataFrame":
+def _empty_frame(schema: Any) -> pd.DataFrame:
     import pandas as pd
     data = {col: pd.array([], dtype=schema["dtypes"][col]) for col in schema["columns"]}
     return pd.DataFrame(data)

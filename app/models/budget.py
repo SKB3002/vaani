@@ -27,6 +27,11 @@ class BudgetRuleIn(BaseModel):
     monthly_budget: float = Field(ge=0)
     carry_cap: float = Field(ge=0)
     priority: int = 100
+    # Optional Need/Want/Investment classification for a custom-tag rule. When the
+    # category is a bare custom tag (not a "Type, Category" built-in), this records
+    # the tag's type so the grouped Table C view can roll it up. Ignored for
+    # built-in categories whose type is implicit in the prefix.
+    type: str | None = Field(default=None, pattern=r"^(Need|Want|Investment)$")
 
 
 class BudgetRulePatch(BaseModel):
@@ -86,6 +91,21 @@ class RunningStateResult(BaseModel):
     emerg_balance_out: float
     warnings: list[str] = Field(default_factory=list)
     rolled_categories: list[str] = Field(default_factory=list)
+
+
+class TagCreateIn(BaseModel):
+    """Create a custom spend tag with a Need/Want/Investment type.
+
+    Auto-creates a budget_rules row (so the tag becomes its own Table C line)
+    and records the tag->type mapping (so the grouped view rolls it up and the
+    LLM can auto-apply it).
+    """
+
+    name: str = Field(min_length=1, max_length=60)
+    type: str = Field(pattern=r"^(Need|Want|Investment)$")
+    monthly_budget: float = Field(default=0.0, ge=0)
+    carry_cap: float = Field(default=0.0, ge=0)
+    priority: int = 100
 
 
 class BudgetAdjustIn(BaseModel):

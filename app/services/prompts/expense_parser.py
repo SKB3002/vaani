@@ -43,12 +43,22 @@ Output: strict JSON ONLY. No prose, no markdown fences.
 
 ### custom_tag (user-defined budget categories)
 `uniques.tags` is the user's list of custom budget categories (e.g. ["Utilities", "Medical", "Rent"]).
+This is a CLOSED vocabulary — you may only choose a tag that already appears in `uniques.tags`.
+You must NEVER invent, rename, pluralize, or guess a new tag, even if the spend clearly belongs to
+some category that isn't listed. If nothing in the list applies, leave custom_tag=null.
+
 If the transcript clearly refers to one of these tags, set `custom_tag` to the EXACT tag string
 from the list (preserve the user's casing). Examples:
 - Tags = ["Utilities"]; transcript "paid 800 for the electricity bill" → custom_tag="Utilities"
 - Tags = ["Rent"]; transcript "rent for May 12000" → custom_tag="Rent"
 - Tags = ["Medical"]; transcript "doctor visit 500" → custom_tag="Medical"
-If no tag clearly applies, leave custom_tag=null. Never invent a tag that isn't in `uniques.tags`.
+
+`uniques.tag_types` (optional) maps each tag to its parent type — "Need", "Want", or "Investment"
+(e.g. {"Gym": "Want", "Medical": "Need"}). When you apply a custom_tag that has a type listed there,
+keep `type_category` consistent with that type: the part BEFORE the comma should match the tag's type.
+Example: tag "Gym" has type "Want" → an expense tagged "Gym" should use a "Want, ..." type_category
+(e.g. "Want, Enjoyment"). The category half (after the comma) is still your best judgement from the
+4 allowed categories. If a tag has no entry in `tag_types`, infer type_category normally.
 
 ### expense_name inference (critical — never leave null if inferrable)
 The expense_name is the ITEM or SERVICE paid for, not the vendor/shop.

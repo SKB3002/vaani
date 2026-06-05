@@ -11,7 +11,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.config import get_settings
 from app.deps import get_budget_runner, get_ledger
-from app.models.budget import BudgetAdjustIn, BudgetRuleIn, BudgetRulePatch, CapsPatch
+from app.models.budget import (
+    BudgetAdjustIn,
+    BudgetRuleIn,
+    BudgetRulePatch,
+    CapsPatch,
+    TagCreateIn,
+)
 from app.services import uniques as uniques_store
 from app.services.budget_runner import BudgetRunner, RunSummary
 from app.services.ledger import LedgerWriter
@@ -99,6 +105,11 @@ def upsert_rule(
     else:
         ledger.append("budget_rules", row)
     uniques_store.add_tag(payload.category)
+    # Record the Need/Want/Investment type for custom-tag rules so the grouped
+    # Table C view can roll them up. Built-in "Type, Category" rules carry their
+    # type in the prefix and don't need (or get) a tag_types entry.
+    if payload.type and ", " not in payload.category:
+        uniques_store.set_tag_type(payload.category, payload.type)
     runner.recompute_all()
     return row
 
@@ -128,7 +139,7 @@ def delete_rule(
 ) -> None:
     if not ledger.delete("budget_rules", category):
         raise HTTPException(404, "rule not found")
-    uniques_store.remove_tag(category)
+    uniques_store.remove_tag(category)  # also drops the tag_types entry
     runner.recompute_all()
 
 
@@ -192,8 +203,53 @@ def recompute(
 def list_tags() -> dict[str, Any]:
     """Known custom tags — auto-populated from budget rule categories.
 
-    Used by the expense form autocomplete and the LLM categorizer."""
-    return {"tags": uniques_store.list_tags()}
+    Used by the expense grid tag dropdown and the LLM categorizer.
+    `tags` is the flat name list (kept for back-compat); `items` carries each
+    tag's recorded Need/Want/Investment type (null if never classified)."""
+    return {
+        "tags": uniques_store.list_tags(),
+        "items": uniques_store.list_tags_with_types(),
+    }
+
+
+@router.post("/tags", status_code=201)
+def create_tag(
+    payload: TagCreateIn,
+    ledger: LedgerWriter = Depends(get_ledger),
+    runner: BudgetRunner = Depends(get_budget_runner),
+) -> dict[str, Any]:
+    """Create a custom spend tag classified as Need / Want / Investment.
+
+    Three effects, all idempotent on the tag name:
+      1. registers the tag in uniques (so the LLM sees it and never invents one);
+      2. records the tag -> type mapping (so the grouped Table C view rolls it up);
+      3. auto-creates a budget_rules row keyed by the tag string, giving the tag
+         its own Table C line. The overflow matcher already picks up expenses
+         whose `custom_tag` equals this category, so spend flows through with no
+         engine change. Recompute refreshes Table C immediately.
+    """
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(400, "tag name cannot be blank")
+
+    uniques_store.add_tag(name)
+    uniques_store.set_tag_type(name, payload.type)
+
+    df = ledger.read("budget_rules")
+    exists = not df.empty and (df["category"].astype("string") == name).any()
+    rule = {
+        "category": name,
+        "monthly_budget": float(payload.monthly_budget),
+        "carry_cap": float(payload.carry_cap),
+        "priority": int(payload.priority),
+    }
+    if exists:
+        ledger.update("budget_rules", name, rule)
+    else:
+        ledger.append("budget_rules", rule)
+
+    runner.recompute_all()
+    return {"name": name, "type": payload.type, "rule": rule}
 
 
 # ---------- adjustments (manual Add/Set buttons) ----------

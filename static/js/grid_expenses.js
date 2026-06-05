@@ -26,12 +26,71 @@
   TYPES.forEach(t => CATEGORIES.forEach(c => TYPE_CATEGORIES.push(`${t}, ${c}`)));
   const PAYMENTS = ["paid", "paid_cash", "paid_by", "paid_for", "adjusted"];
 
+  // Sentinel shown at the top of the Tag dropdown. Picking it opens the
+  // "create a tag" flow instead of storing the literal string.
+  const ADD_TAG_OPTION = "➕ Add new tag…";
+
+  // Known custom tags (uniques.tags). Loaded once at init, refreshed after a
+  // new tag is created so every cell's dropdown sees it.
+  let knownTags = [];
+
+  async function loadTags() {
+    try {
+      const res = await window.Vaani.api("/api/budgets/tags");
+      knownTags = Array.isArray(res.tags) ? res.tags : [];
+    } catch (_e) {
+      knownTags = [];
+    }
+    return knownTags;
+  }
+
+  function tagDropdownSource() {
+    // "(none)" lets the user clear a tag back to null; ADD_TAG_OPTION opens the
+    // create flow. The rest are the real tags.
+    return ["(none)", ADD_TAG_OPTION, ...knownTags];
+  }
+
+  // Prompt for a new tag name + its Need/Want/Investment type, POST it, and
+  // return the created tag name (or null if the user cancelled / it failed).
+  async function promptCreateTag(prefillName) {
+    const name = (prompt("New tag name (e.g. Gym, Netflix, Rent):", prefillName || "") || "").trim();
+    if (!name) return null;
+    // Closed 3-way choice. prompt() keeps it dependency-free and consistent
+    // with the rest of this page's lightweight dialogs.
+    const ans = (prompt(
+      `Is "${name}" a Need, a Want, or an Investment?\n\nType one: need / want / investment`,
+      "need"
+    ) || "").trim().toLowerCase();
+    const map = { need: "Need", want: "Want", investment: "Investment" };
+    const type = map[ans];
+    if (!type) {
+      window.Vaani.toast({ type: "danger", message: "Tag not created — type must be need, want, or investment." });
+      return null;
+    }
+    try {
+      await window.Vaani.api("/api/budgets/tags", {
+        method: "POST",
+        body: { name, type },
+      });
+      await loadTags();
+      window.Vaani.toast({ type: "success", message: `Tag "${name}" (${type}) created` });
+      return name;
+    } catch (err) {
+      window.Vaani.toast({ type: "danger", title: "Tag create failed", message: err.message });
+      return null;
+    }
+  }
+
   function chipClassForTypeCategory(v) {
     if (!v) return "";
     if (v.startsWith("Need"))       return "hot-chip-cell hot-chip-cell--need";
     if (v.startsWith("Want"))       return "hot-chip-cell hot-chip-cell--want";
     if (v.startsWith("Investment")) return "hot-chip-cell hot-chip-cell--investment";
     return "hot-chip-cell";
+  }
+  function chipClassForTag(v) {
+    if (!v) return "";
+    return "hot-chip-cell hot-chip-cell--tag";
   }
   function chipClassForPayment(v) {
     if (v === "paid")      return "hot-chip-cell hot-chip-cell--paid";
@@ -76,7 +135,10 @@
 
     let rows = [];
     try {
-      const data = await window.Vaani.api("/api/expenses");
+      const [data] = await Promise.all([
+        window.Vaani.api("/api/expenses"),
+        loadTags(),
+      ]);
       rows = Array.isArray(data) ? data : (data.items || []);
     } catch (err) {
       rows = [];
@@ -89,6 +151,18 @@
         source: TYPE_CATEGORIES, strict: true, allowInvalid: false,
         renderer: chipRenderer(chipClassForTypeCategory),
         width: 220,
+      },
+      {
+        // Custom budget tag (expenses.custom_tag). Closed dropdown over known
+        // tags + a "create new" sentinel. Lets users tag already-logged
+        // expenses so Table C picks them up; new tags are sent to the LLM.
+        data: "custom_tag", title: "Tag", type: "dropdown",
+        // Source is dynamic — recomputed per-open so freshly created tags show
+        // up without rebuilding the grid.
+        source(query, process) { process(tagDropdownSource()); },
+        strict: false, allowInvalid: true,
+        renderer: chipRenderer(chipClassForTag),
+        width: 150,
       },
       {
         data: "payment_method", title: "Payment", type: "dropdown",
@@ -124,6 +198,41 @@
           if (oldVal === newVal) continue;
           const row = hot.getSourceDataAtRow(rowIdx);
 
+          // --- Tag column: resolve sentinels before the generic save path. ---
+          if (prop === "custom_tag") {
+            if (newVal === "(none)" || newVal === "") {
+              // Normalize "clear" to null and persist it.
+              if (newVal !== null) hot.setDataAtRowProp(rowIdx, "custom_tag", null);
+              if (!row.id) continue; // unsaved blank row — nothing to PATCH yet
+              try {
+                await window.Vaani.api(`/api/expenses/${row.id}`, {
+                  method: "PATCH", body: { custom_tag: null },
+                });
+                window.Vaani.toast({ type: "success", message: "Tag cleared" });
+              } catch (err) {
+                window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
+              }
+              continue;
+            }
+            if (newVal === ADD_TAG_OPTION) {
+              const created = await promptCreateTag("");
+              // Revert the sentinel; apply the created tag (or restore old value).
+              hot.setDataAtRowProp(rowIdx, "custom_tag", created || oldVal || null);
+              if (created && row.id) {
+                try {
+                  await window.Vaani.api(`/api/expenses/${row.id}`, {
+                    method: "PATCH", body: { custom_tag: created },
+                  });
+                  window.Vaani.toast({ type: "success", message: `Tagged: ${created}` });
+                } catch (err) {
+                  window.Vaani.toast({ type: "danger", title: "Save failed", message: err.message });
+                }
+              }
+              continue;
+            }
+            // A real tag was chosen — fall through to the generic save below.
+          }
+
           // Backend defaults paid_for_method=online and adjustment_type=cash_to_online
           // when those sub-fields are omitted — the grid doesn't surface them.
           const isAdjusted = row.payment_method === "adjusted";
@@ -149,6 +258,10 @@
               };
               if (row.person_name) payload.person_name = row.person_name;
               if (row.notes) payload.notes = row.notes;
+              // Carry a real tag through on create (skip sentinels / cleared).
+              if (row.custom_tag && row.custom_tag !== "(none)" && row.custom_tag !== ADD_TAG_OPTION) {
+                payload.custom_tag = row.custom_tag;
+              }
               const created = await window.Vaani.api("/api/expenses", { method: "POST", body: payload });
               if (created && created.id) row.id = created.id;
             }

@@ -133,19 +133,34 @@
   async function addRule() {
     const category = prompt("Category (e.g., Food & Drinks or 'Need, Travel' or electricity):");
     if (!category) return;
+    const cat = category.trim();
+    // For a bare custom tag (not a built-in "Type, Category"), ask which type it
+    // rolls up into so the grouped Table C view and the LLM both know.
+    let type = null;
+    if (!cat.includes(", ")) {
+      const ans = (prompt(
+        `Is "${cat}" a Need, a Want, or an Investment?\n\nType one: need / want / investment`,
+        "need"
+      ) || "").trim().toLowerCase();
+      const map = { need: "Need", want: "Want", investment: "Investment" };
+      type = map[ans] || null;
+      if (!type) {
+        toast({ type: "danger", message: "Rule not saved — type must be need, want, or investment." });
+        return;
+      }
+    }
     const mb = prompt("Monthly budget:");
     const cc = prompt("Carry cap:");
     const pr = prompt("Priority (lower = earlier, default 100):", "100");
     try {
-      await api("/api/budgets/rules", {
-        method: "POST",
-        body: {
-          category: category.trim(),
-          monthly_budget: Number(mb) || 0,
-          carry_cap: Number(cc) || 0,
-          priority: Number(pr) || 100,
-        },
-      });
+      const body = {
+        category: cat,
+        monthly_budget: Number(mb) || 0,
+        carry_cap: Number(cc) || 0,
+        priority: Number(pr) || 100,
+      };
+      if (type) body.type = type;
+      await api("/api/budgets/rules", { method: "POST", body });
       toast({ type: "success", message: "Rule saved" });
       refreshRules();
     } catch (e) {
