@@ -18,7 +18,7 @@ class UploadResponse(BaseModel):
 
 
 class MappingRequest(BaseModel):
-    target_table: Literal["expenses", "investments", "wishlist", "goals_a", "goals_b"]
+    target_table: Literal["expenses", "investments", "wishlist"]
     mapping: dict[str, str] = Field(
         default_factory=dict,
         description="source column name -> target schema column name (ignored if preset_id given)",

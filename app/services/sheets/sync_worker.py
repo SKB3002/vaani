@@ -30,8 +30,6 @@ SYNCABLE_TABLES: set[str] = {
     "expenses",
     "balances",
     "wishlist",
-    "goals_a",
-    "goals_b",
     "budget_rules",
     "budget_table_c",
     "investments",

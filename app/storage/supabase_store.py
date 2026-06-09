@@ -86,8 +86,6 @@ _CONFLICT_COLS: dict[str, list[str]] = {
     "balances": ["user_id", "asof"],
     "investments": ["user_id", "month"],
     "wishlist": ["id"],
-    "goals_a": ["goal_id"],
-    "goals_b": ["goal_id"],
     "budget_rules": ["user_id", "category"],
     "budget_table_c": ["user_id", "month", "category"],
     "budget_state": ["user_id", "category"],
@@ -170,16 +168,19 @@ def _update_by_pk(
     if not cfg.supabase_configured:
         return None
 
-    cols = [k for k, v in updates.items() if v is not None]
+    # Include EVERY key the caller passed — a value of None means "set this
+    # column to NULL" (e.g. clearing custom_tag), not "skip it". Filtering out
+    # None previously made the SET list empty for a clear-only patch, which
+    # returned None and surfaced as a spurious 404 "expense not found".
+    cols = list(updates.keys())
     if not cols:
         return None
 
     set_clause = ", ".join(f"{c} = %s" for c in cols)
-    compound = table in _COMPOUND_PK_TABLES
-    where = f"{pk_column} = %s" + (" AND user_id = %s" if compound else "")
-    params: list[Any] = [updates[c] for c in cols] + [pk_value]
-    if compound:
-        params.append(current_user_id())
+    # Always scope by user_id (every table carries it) — both for correctness
+    # and to prevent patching another user's row by guessing its id.
+    where = f"{pk_column} = %s AND user_id = %s"
+    params: list[Any] = [updates[c] for c in cols] + [pk_value, current_user_id()]
 
     sql = f"UPDATE {table} SET {set_clause} WHERE {where} RETURNING *"
 

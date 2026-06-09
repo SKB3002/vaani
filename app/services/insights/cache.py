@@ -60,13 +60,13 @@ PROMPT_VERSION_CHAT_ANSWER: str = "v1"
 # Tables whose mutations should invalidate the cache. Anything outside this
 # set is a no-op for the invalidator — derived state (e.g. ``budget_state``
 # or ``budget_adjustments``) is recomputed from these primary tables, and
-# ``balances`` / ``wishlist`` / ``drafts`` do not enter the bundle at all.
+# ``balances`` / ``drafts`` do not enter the bundle at all.
 BUNDLE_AFFECTING_TABLES: frozenset[str] = frozenset(
     {
         "expenses",
         "budget_rules",
         "budget_table_c",
-        "goals_a",
+        "wishlist",
         "investments",
     }
 )

@@ -480,39 +480,43 @@ def _compute_budget_utilisation(
 
 
 def _compute_goal_progress(
-    goals_a: pd.DataFrame,
-    expenses: pd.DataFrame,  # noqa: ARG001 — reserved for future goal-link heuristic
+    wishlist: pd.DataFrame,
+    expenses: pd.DataFrame,  # noqa: ARG001 — reserved for future wish-link heuristic
     month: str,  # noqa: ARG001
 ) -> list[GoalProgress]:
-    """Compute progress for each goal in ``goals_a``.
+    """Compute savings progress for each wishlist item.
 
-    NOTE: The EXPENSES schema has **no** ``goal_id`` column at the time of
-    writing, so there is no deterministic link between a transaction and a
-    savings goal. ``monthly_contribution_avg`` therefore defaults to
-    ``0.0`` and ``projected_completion_date`` to ``None``. A future revision
-    that adds ``goal_id`` to expenses can populate these from a 3-month
-    rolling sum.
+    Wishlist replaced the standalone Goals feature: each wish has a target
+    (``target_amount``) and amount saved so far (``saved_so_far``), which maps
+    directly onto the briefing's progress model. ``monthly_contribution_avg``
+    defaults to ``0.0`` and ``projected_completion_date`` to ``None`` — there's
+    no deterministic transaction↔wish link yet (a future revision can populate
+    these from a 3-month rolling sum once such a link exists).
+
+    Only active wishes are reported; achieved/abandoned ones are excluded.
     """
-    if goals_a.empty:
+    if wishlist.empty:
         return []
 
     out: list[GoalProgress] = []
-    for _, row in goals_a.iterrows():
-        goal_id = str(row.get("goal_id") or "").strip()
-        if not goal_id:
+    for _, row in wishlist.iterrows():
+        wish_id = str(row.get("id") or "").strip()
+        if not wish_id:
+            continue
+        status = str(row.get("status") or "active").strip().lower()
+        if status and status != "active":
             continue
         target = _safe_float(row.get("target_amount"))
-        current = _safe_float(row.get("current_amount"))
+        current = _safe_float(row.get("saved_so_far"))
         pct = _safe_pct(current, target) or 0.0
-        monthly_avg = 0.0  # see docstring fallback
         out.append(
             GoalProgress(
-                goal_id=goal_id,
-                goal_name=str(row.get("goal_name") or ""),
+                goal_id=wish_id,
+                goal_name=str(row.get("item") or ""),
                 target_amount=target,
                 current_amount=current,
                 pct_complete=pct,
-                monthly_contribution_avg=monthly_avg,
+                monthly_contribution_avg=0.0,
                 projected_completion_date=None,
             )
         )
@@ -649,7 +653,7 @@ def build_monthly_bundle(
     expenses = ledger.read("expenses")
     budget_rules = ledger.read("budget_rules")
     table_c = ledger.read("budget_table_c")
-    goals_a = ledger.read("goals_a")
+    wishlist = ledger.read("wishlist")
     investments = ledger.read("investments")
     balances = ledger.read("balances")
 
@@ -676,7 +680,7 @@ def build_monthly_bundle(
     deltas_vs_3m = _build_deltas(cur_totals, t3_avg)
 
     budget_util = _compute_budget_utilisation(budget_rules, table_c, current_period)
-    goals = _compute_goal_progress(goals_a, expenses, month)
+    goals = _compute_goal_progress(wishlist, expenses, month)
     net_cashflow = _compute_net_cashflow(balances, expenses, cur_start, cur_end)
     top_txns = _compute_largest_txns(expenses, cur_start, cur_end, n=5)
     inv_cur, inv_prev, inv_delta = _compute_investments(investments, month)

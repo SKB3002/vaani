@@ -29,6 +29,11 @@
   <button type="button" class="btn btn--ghost" data-wishlist-filter="all" role="tab">All</button>
 </section>
 
+<section class="card" style="margin-bottom: var(--sp-4);">
+  <header class="card__header"><h3 class="card__title">Wishlist Progress</h3></header>
+  <div class="card__body" id="wishlist-progress-chart" style="min-height: 260px;"></div>
+</section>
+
 <div id="wishlist-grid" class="grid-3" role="list" aria-live="polite"></div>
 
 <!-- Add-column modal template (shared with add_column_modal.js) -->
@@ -69,5 +74,6 @@
 </template>
 
 <script defer src="/static/js/partials/add_column_modal.js"></script>
-<script defer src="/static/js/grid_wishlist.js"></script>
+<script defer src="/static/js/charts.js?v=4"></script>
+<script defer src="/static/js/grid_wishlist.js?v=2"></script>
 {% endblock %}

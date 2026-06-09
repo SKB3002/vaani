@@ -165,21 +165,21 @@ def test_time_bucket_year() -> None:
 def test_horizontal_bar_multi_series() -> None:
     df = pd.DataFrame(
         {
-            "goal_name": ["Car", "House"],
-            "current_amount": [10000.0, 200000.0],
+            "item": ["Car", "House"],
+            "saved_so_far": [10000.0, 200000.0],
             "target_amount": [50000.0, 500000.0],
         }
     )
     spec = ChartSpec(
-        id="g",
-        title="Goals",
-        source="goals_a",
+        id="w",
+        title="Wishlist",
+        source="wishlist",
         type="horizontal_bar",
-        x="goal_name",
-        series=["current_amount", "target_amount"],
+        x="item",
+        series=["saved_so_far", "target_amount"],
     )
     out = compute_chart(spec, _loader_from(df))
     assert out.labels == ["Car", "House"]
     assert len(out.datasets) == 2
     labels = [d.label for d in out.datasets]
-    assert "current_amount" in labels and "target_amount" in labels
+    assert "saved_so_far" in labels and "target_amount" in labels

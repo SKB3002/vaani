@@ -36,12 +36,12 @@ charts:
     source: expenses
     type: donut
     group_by: category
-  - id: goal_progress
-    title: "Goals"
-    source: goals_a
+  - id: wishlist_progress
+    title: "Wishlist"
+    source: wishlist
     type: horizontal_bar
-    x: goal_name
-    series: [current_amount, target_amount]
+    x: item
+    series: [saved_so_far, target_amount]
   - id: daily_spend_line
     title: "Daily"
     source: expenses

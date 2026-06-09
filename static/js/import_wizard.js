@@ -11,8 +11,6 @@
     investments: ["month", "long_term", "mid_long_term", "emergency_fund",
                   "bike_savings_wants", "misc_spend_save", "fixed_deposits"],
     wishlist: ["item", "target_amount", "saved_so_far", "priority", "notes", "link"],
-    goals_a: ["goal_id", "goal_name", "target_amount", "current_amount", "monthly_contribution"],
-    goals_b: ["goal_id", "goal_name", "target_amount", "manual_saved", "auto_added", "monthly_contribution"],
   };
 
   const state = {

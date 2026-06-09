@@ -95,12 +95,12 @@ charts:
     format: currency
     palette: ["--chart-food", "--chart-travel", "--chart-enjoyment", "--chart-misc"]
 
-  - id: goal_progress
-    title: "Goal Progress"
-    source: goals_a
+  - id: wishlist_progress
+    title: "Wishlist Progress"
+    source: wishlist
     type: stacked_bar
-    x: goal_name
-    series: [current_amount, remaining]
+    x: item
+    series: [saved_so_far, remaining]
     format: currency
     palette: ["--chart-investment", "--chart-grid"]
 

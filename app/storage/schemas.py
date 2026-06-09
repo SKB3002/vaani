@@ -130,69 +130,17 @@ WISHLIST: TableSchema = {
     "pk": "id",
 }
 
-GOALS_A: TableSchema = {
-    "columns": [
-        "goal_id",
-        "goal_name",
-        "target_amount",
-        "current_amount",
-        "monthly_contribution",
-        "pct_complete",
-        "months_left",
-        "status",
-        "import_batch_id",
-    ],
-    "dtypes": {
-        "goal_id": "string",
-        "goal_name": "string",
-        "target_amount": "float64",
-        "current_amount": "float64",
-        "monthly_contribution": "float64",
-        "pct_complete": "float64",
-        "months_left": "Int64",
-        "status": "string",
-        "import_batch_id": "string",
-    },
-    "pk": "goal_id",
-}
-
-GOALS_B: TableSchema = {
-    "columns": [
-        "goal_id",
-        "goal_name",
-        "target_amount",
-        "manual_saved",
-        "auto_added",
-        "total_saved",
-        "monthly_contribution",
-        "pct_complete",
-        "months_left",
-        "status",
-        "import_batch_id",
-    ],
-    "dtypes": {
-        "goal_id": "string",
-        "goal_name": "string",
-        "target_amount": "float64",
-        "manual_saved": "float64",
-        "auto_added": "float64",
-        "total_saved": "float64",
-        "monthly_contribution": "float64",
-        "pct_complete": "float64",
-        "months_left": "Int64",
-        "status": "string",
-        "import_batch_id": "string",
-    },
-    "pk": "goal_id",
-}
-
 BUDGET_RULES: TableSchema = {
-    "columns": ["category", "monthly_budget", "carry_cap", "priority"],
+    "columns": ["category", "monthly_budget", "carry_cap", "priority", "type"],
     "dtypes": {
         "category": "string",
         "monthly_budget": "float64",
         "carry_cap": "float64",
         "priority": "Int64",
+        # Need/Want/Investment for custom-tag rules; NULL for built-in
+        # "Type, Category" rules (their type is the prefix). Also the persistent
+        # home for tag types in supabase mode (uniques.json is read-only there).
+        "type": "string",
     },
     "pk": "category",
 }
@@ -303,8 +251,6 @@ SCHEMAS: dict[str, TableSchema] = {
     "balances": BALANCES,
     "investments": INVESTMENTS,
     "wishlist": WISHLIST,
-    "goals_a": GOALS_A,
-    "goals_b": GOALS_B,
     "budget_rules": BUDGET_RULES,
     "budget_table_c": BUDGET_TABLE_C,
     "budget_state": BUDGET_STATE,
@@ -314,7 +260,7 @@ SCHEMAS: dict[str, TableSchema] = {
 }
 
 
-IMPORTABLE_TABLES: set[str] = {"expenses", "investments", "wishlist", "goals_a", "goals_b"}
+IMPORTABLE_TABLES: set[str] = {"expenses", "investments", "wishlist"}
 
 
 def table_path(data_dir: str, table: str) -> str:

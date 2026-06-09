@@ -25,7 +25,7 @@ def test_list_contains_six_charts(tmp_workspace: Path) -> None:
     assert r.status_code == 200
     body = r.json()
     ids = {c["id"] for c in body["charts"]}
-    assert {"cumulative_types_pie", "monthly_stack", "category_donut", "goal_progress", "daily_spend_line", "top_vendors"} <= ids
+    assert {"cumulative_types_pie", "monthly_stack", "category_donut", "wishlist_progress", "daily_spend_line", "top_vendors"} <= ids
 
 
 def test_cumulative_types_pie_payload(tmp_workspace: Path) -> None:

@@ -5,12 +5,16 @@ file shape is `{vendors: {}, aliases: {}, people: [], tags: []}`.
 """
 from __future__ import annotations
 
+import errno
 import json
+import logging
 import threading
 from pathlib import Path
 from typing import Any
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT: dict[str, Any] = {
     "vendors": {},
@@ -49,11 +53,24 @@ def load() -> dict[str, Any]:
 
 
 def save(data: dict[str, Any]) -> None:
+    """Persist uniques.json atomically.
+
+    On a read-only filesystem (Vercel/EROFS in supabase mode) the write is
+    skipped instead of crashing the request — uniques is a local-mode store, and
+    in supabase mode tags are sourced from budget_rules instead (see budgets
+    router). Any other OSError still propagates.
+    """
     p = _path()
-    p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(p)
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(p)
+    except OSError as e:
+        if getattr(e, "errno", None) == errno.EROFS:
+            logger.warning("uniques.json not persisted (read-only filesystem): %s", p)
+            return
+        raise
 
 
 def add_tag(tag: str) -> list[str]:

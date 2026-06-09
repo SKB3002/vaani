@@ -203,39 +203,10 @@ def _normalize_wishlist_row(raw: dict[str, Any], _: str | None) -> tuple[dict[st
     return row, []
 
 
-def _normalize_goal_row(raw: dict[str, Any], _: str | None) -> tuple[dict[str, Any] | None, list[str]]:
-    errors: list[str] = []
-    name = norm.clean_string(raw.get("goal_name"))
-    if not name:
-        errors.append("missing goal_name")
-    target = norm.clean_amount(raw.get("target_amount"))
-    if target is None or target <= 0:
-        errors.append("invalid target_amount")
-    if errors:
-        return None, errors
-    current: float = norm.clean_amount(raw.get("current_amount")) or 0.0
-    monthly: float = norm.clean_amount(raw.get("monthly_contribution")) or 0.0
-    assert target is not None  # guarded above
-    pct = (current / target * 100.0) if target > 0 else 0.0
-    months_left = int(max(0.0, (target - current) / monthly)) if monthly > 0 else 0
-    row: dict[str, Any] = {
-        "goal_name": name,
-        "target_amount": target,
-        "current_amount": current,
-        "monthly_contribution": monthly,
-        "pct_complete": round(pct, 2),
-        "months_left": months_left,
-        "status": norm.clean_string(raw.get("status")) or "active",
-    }
-    return row, []
-
-
 NORMALIZERS = {
     "expenses": _normalize_expense_row,
     "investments": _normalize_investment_row,
     "wishlist": _normalize_wishlist_row,
-    "goals_a": _normalize_goal_row,
-    "goals_b": _normalize_goal_row,
 }
 
 
@@ -253,10 +224,6 @@ def dedup_key_for(target_table: str, normalized_row: dict[str, Any]) -> str:
     if target_table == "wishlist":
         return generic_dedup_key(
             ["wishlist", normalized_row["item"], f"{normalized_row['target_amount']:.2f}"]
-        )
-    if target_table in {"goals_a", "goals_b"}:
-        return generic_dedup_key(
-            [target_table, normalized_row["goal_name"], f"{normalized_row['target_amount']:.2f}"]
         )
     return generic_dedup_key([target_table, json.dumps(normalized_row, sort_keys=True, default=str)])
 
@@ -622,22 +589,6 @@ def _build_full_row(target_table: str, row: dict[str, Any], batch_id: str) -> di
             "created_at": row.get("created_at") or now_utc().isoformat(),
             "status": row.get("status") or "active",
             "import_batch_id": batch_id,
-        }
-    if target_table in {"goals_a", "goals_b"}:
-        return {
-            "goal_id": str(ulid.new()),
-            "goal_name": row["goal_name"],
-            "target_amount": float(row["target_amount"]),
-            "current_amount": float(row.get("current_amount") or 0.0),
-            "monthly_contribution": float(row.get("monthly_contribution") or 0.0),
-            "pct_complete": float(row.get("pct_complete") or 0.0),
-            "months_left": int(row.get("months_left") or 0),
-            "status": row.get("status") or "active",
-            "import_batch_id": batch_id,
-            # goals_b extra fields default to 0
-            "manual_saved": float(row.get("current_amount") or 0.0),
-            "auto_added": 0.0,
-            "total_saved": float(row.get("current_amount") or 0.0),
         }
     raise ValueError(f"unsupported target table: {target_table}")
 

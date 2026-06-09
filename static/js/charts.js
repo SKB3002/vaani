@@ -298,6 +298,19 @@
 
   window.Vaani = window.Vaani || {};
   window.Vaani.refreshCharts = refresh;
+  // Render a single registered chart by id into an arbitrary container. Lets
+  // other pages (e.g. Wishlist) embed one chart without the full charts grid.
+  // Re-renders on theme change so colors stay in sync.
+  window.Vaani.renderChartInto = function (chartId, container) {
+    if (!container) return;
+    const spec = { id: chartId };
+    loadChart(spec, container);
+    document.addEventListener("fineye:themechange", () => {
+      const existing = charts.get(chartId);
+      if (existing) { existing.destroy(); charts.delete(chartId); }
+      loadChart(spec, container);
+    });
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", renderAll);

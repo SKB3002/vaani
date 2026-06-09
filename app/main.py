@@ -25,7 +25,6 @@ from app.routers import (
     demo_data,
     expenses,
     export,
-    goals,
     health,
     home,
     imports,
@@ -168,7 +167,6 @@ def create_app() -> FastAPI:
     app.include_router(voice.router)
     app.include_router(sheets.router)
     app.include_router(budgets.router)
-    app.include_router(goals.router)
     app.include_router(charts.router)
     app.include_router(insights.router)
     app.include_router(demo_data.router)

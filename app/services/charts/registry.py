@@ -27,8 +27,6 @@ ChartSource = Literal[
     "expenses",
     "investments",
     "wishlist",
-    "goals_a",
-    "goals_b",
     "budget_table_c",
     "balances",
 ]

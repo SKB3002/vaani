@@ -58,20 +58,6 @@ def wishlist_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "wishlist.html", _ctx(request))
 
 
-@router.get("/goals/overview", response_class=HTMLResponse)
-def goals_overview_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "goals_overview.html", _ctx(request, goals=[])
-    )
-
-
-@router.get("/goals/sources", response_class=HTMLResponse)
-def goals_sources_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request, "goals_sources.html", _ctx(request, goals=[])
-    )
-
-
 @router.get("/budgets", response_class=HTMLResponse)
 def budgets_page(request: Request) -> HTMLResponse:
     # Load rules from the ledger so the page server-renders the table on

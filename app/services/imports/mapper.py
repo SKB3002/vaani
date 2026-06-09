@@ -16,11 +16,9 @@ _ALIASES: dict[str, list[str]] = {
     "notes": ["notes", "note", "remarks", "comment"],
     "month": ["month", "period", "yyyymm"],
     "item": ["item", "name", "title", "wish"],
-    "target_amount": ["target_amount", "target", "goal", "target_value"],
+    "target_amount": ["target_amount", "target", "target_value"],
     "saved_so_far": ["saved_so_far", "saved", "collected"],
     "priority": ["priority", "prio"],
-    "goal_id": ["goal_id", "id"],
-    "goal_name": ["goal_name", "name", "title"],
 }
 
 

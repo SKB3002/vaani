@@ -80,6 +80,15 @@
       </div>`;
   }
 
+  // (Re)render the Wishlist Progress chart. Reads the wishlist table server-side
+  // (all items, every status), so it's refreshed after any add/edit/contribute.
+  function renderProgressChart() {
+    const el = document.getElementById("wishlist-progress-chart");
+    if (el && window.Vaani && typeof window.Vaani.renderChartInto === "function") {
+      window.Vaani.renderChartInto("wishlist_progress", el);
+    }
+  }
+
   async function loadAndRender() {
     try {
       const data = await window.Vaani.api(`/api/wishlist?status=${encodeURIComponent(state.status)}`);
@@ -88,6 +97,7 @@
       window.Vaani.toast({ type: "danger", title: "Load failed", message: err.message });
       state.items = [];
     }
+    renderProgressChart();
     const container = document.getElementById("wishlist-grid");
     if (!container) return;
     if (!state.items.length) {

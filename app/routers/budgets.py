@@ -94,21 +94,23 @@ def upsert_rule(
 ) -> dict[str, Any]:
     df = ledger.read("budget_rules")
     exists = not df.empty and (df["category"].astype("string") == payload.category).any()
+    # Persist the Need/Want/Investment type for custom-tag rules so the grouped
+    # Table C view can roll them up. Built-in "Type, Category" rules carry their
+    # type in the prefix, so leave it NULL for them.
+    is_bare_tag = ", " not in payload.category
     row = {
         "category": payload.category,
         "monthly_budget": float(payload.monthly_budget),
         "carry_cap": float(payload.carry_cap),
         "priority": int(payload.priority),
+        "type": payload.type if (payload.type and is_bare_tag) else None,
     }
     if exists:
         ledger.update("budget_rules", payload.category, row)
     else:
         ledger.append("budget_rules", row)
     uniques_store.add_tag(payload.category)
-    # Record the Need/Want/Investment type for custom-tag rules so the grouped
-    # Table C view can roll them up. Built-in "Type, Category" rules carry their
-    # type in the prefix and don't need (or get) a tag_types entry.
-    if payload.type and ", " not in payload.category:
+    if payload.type and is_bare_tag:
         uniques_store.set_tag_type(payload.category, payload.type)
     runner.recompute_all()
     return row
@@ -199,17 +201,43 @@ def recompute(
 # ---------- tags (auto-derived from budget_rules) ----------
 
 
-@router.get("/tags")
-def list_tags() -> dict[str, Any]:
-    """Known custom tags — auto-populated from budget rule categories.
+def _bare_tag_rules(ledger: LedgerWriter) -> list[dict[str, Any]]:
+    """Custom-tag rows from budget_rules: category is a bare tag (no ", "),
+    with its persisted `type`. budget_rules is the durable, dual-mode source
+    (Supabase in hosted mode, CSV locally) — unlike uniques.json which is on
+    Vercel's read-only filesystem and can't persist there."""
+    df = ledger.read("budget_rules")
+    if df.empty:
+        return []
+    out: list[dict[str, Any]] = []
+    has_type = "type" in df.columns
+    for _, row in df.iterrows():
+        cat = str(row["category"])
+        if ", " in cat:  # built-in "Type, Category" — not a custom tag
+            continue
+        t = row["type"] if has_type else None
+        type_val = str(t) if (t is not None and str(t) not in ("", "nan", "<NA>")) else None
+        out.append({"name": cat, "type": type_val})
+    return out
 
-    Used by the expense grid tag dropdown and the LLM categorizer.
-    `tags` is the flat name list (kept for back-compat); `items` carries each
-    tag's recorded Need/Want/Investment type (null if never classified)."""
-    return {
-        "tags": uniques_store.list_tags(),
-        "items": uniques_store.list_tags_with_types(),
-    }
+
+@router.get("/tags")
+def list_tags(ledger: LedgerWriter = Depends(get_ledger)) -> dict[str, Any]:
+    """Known custom tags with their Need/Want/Investment type.
+
+    Sourced from budget_rules (durable in both storage modes), merged with any
+    uniques.json tags that don't yet have a rule (CSV-mode legacy). Used by the
+    expense grid tag dropdown and the LLM categorizer. `tags` is the flat name
+    list (back-compat); `items` carries each tag's type (null if unclassified)."""
+    items: list[dict[str, Any]] = _bare_tag_rules(ledger)
+    seen = {it["name"].lower() for it in items}
+    # Fold in uniques tags that have no rule yet (local CSV mode), enriching
+    # type from uniques.tag_types where available.
+    for u in uniques_store.list_tags_with_types():
+        if u["name"].lower() not in seen:
+            items.append({"name": u["name"], "type": u.get("type")})
+            seen.add(u["name"].lower())
+    return {"tags": [it["name"] for it in items], "items": items}
 
 
 @router.post("/tags", status_code=201)
@@ -232,6 +260,8 @@ def create_tag(
     if not name:
         raise HTTPException(400, "tag name cannot be blank")
 
+    # uniques is the CSV-mode store; in supabase mode it's read-only and these
+    # are best-effort (the durable copy is the budget_rules.type column below).
     uniques_store.add_tag(name)
     uniques_store.set_tag_type(name, payload.type)
 
@@ -242,6 +272,7 @@ def create_tag(
         "monthly_budget": float(payload.monthly_budget),
         "carry_cap": float(payload.carry_cap),
         "priority": int(payload.priority),
+        "type": payload.type,  # durable home for the tag's type
     }
     if exists:
         ledger.update("budget_rules", name, rule)

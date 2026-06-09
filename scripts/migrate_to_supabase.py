@@ -4,7 +4,7 @@ Run from the project root:
     python scripts/migrate_to_supabase.py
 
 Tables migrated (in dependency order):
-    expenses, balances, investments, wishlist, goals_a, goals_b,
+    expenses, balances, investments, wishlist,
     budget_rules, budget_table_c, drafts
 
 Safe to run multiple times — uses ON CONFLICT DO UPDATE (upsert).
@@ -43,8 +43,6 @@ TABLE_ORDER = [
     "balances",
     "investments",
     "wishlist",
-    "goals_a",
-    "goals_b",
     "budget_rules",
     "budget_table_c",
     "drafts",

@@ -25,8 +25,6 @@ EXPORTABLE_TABLES: tuple[str, ...] = (
     "balances",
     "investments",
     "wishlist",
-    "goals_a",
-    "goals_b",
     "budget_rules",
     "budget_table_c",
 )

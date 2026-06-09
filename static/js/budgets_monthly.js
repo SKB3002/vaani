@@ -66,7 +66,12 @@
     for (const r of rows) groups[typeOf(r.category)] = (groups[typeOf(r.category)] || []).concat([r]);
     const orderedTypes = GROUP_ORDER.filter((t) => groups[t] && groups[t].length);
 
-    function dataRow(r) {
+    // Only group when at least one row has a real Need/Want/Investment type.
+    // If everything is unclassified ("Other"), fall back to a plain flat list so
+    // users who haven't tagged anything don't see a confusing lone "Other" header.
+    const hasRealTypes = orderedTypes.some((t) => t !== "Other");
+
+    function dataRow(r, indent) {
       const over = Number(r.actual) > Number(r.budget) + Number(r.budget) * 0; // compare to budget_effective approximated as budget+carry
       const heavyEmerg = Number(r.to_emergency) > 0;
       const tr = document.createElement("tr");
@@ -76,8 +81,9 @@
       if (notesText.includes("overflow_lost")) {
         warnings.push(`${r.category}: ${notesText}`);
       }
+      const pad = indent ? ' style="padding-left: var(--sp-4);"' : "";
       tr.innerHTML = `
-        <td style="padding-left: var(--sp-4);">${escapeHtml(r.category)}</td>
+        <td${pad}>${escapeHtml(r.category)}</td>
         <td class="num mono">${fmt(r.budget)}</td>
         <td class="num mono">${fmt(r.actual)}</td>
         <td class="num mono">${fmt(r.remaining)}</td>
@@ -113,10 +119,16 @@
       return tr;
     }
 
-    for (const type of orderedTypes) {
-      const list = groups[type];
-      rowsEl.appendChild(groupHeader(type, list));
-      for (const r of list) rowsEl.appendChild(dataRow(r));
+    if (hasRealTypes) {
+      // Grouped view with type subtotals + indented member rows.
+      for (const type of orderedTypes) {
+        const list = groups[type];
+        rowsEl.appendChild(groupHeader(type, list));
+        for (const r of list) rowsEl.appendChild(dataRow(r, true));
+      }
+    } else {
+      // No tags classified yet — plain flat list, original look.
+      for (const r of rows) rowsEl.appendChild(dataRow(r, false));
     }
     if (warnings.length) {
       warnWrap.hidden = false;
